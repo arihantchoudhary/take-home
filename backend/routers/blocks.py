@@ -1,6 +1,10 @@
 from fastapi import APIRouter, HTTPException
 from typing import List, Union
-from models import TextBlock, ImageBlock, BlockCreate, BlockUpdate
+from models import (
+    TextBlock, TodoBlock, BulletListBlock, NumberedListBlock,
+    QuoteBlock, CodeBlock, DividerBlock, ImageBlock, VideoBlock,
+    BlockCreate, BlockUpdate
+)
 import database as db
 
 router = APIRouter(
@@ -8,8 +12,14 @@ router = APIRouter(
     tags=["blocks"]
 )
 
+# Union type for all block types
+BlockType = Union[
+    TextBlock, TodoBlock, BulletListBlock, NumberedListBlock,
+    QuoteBlock, CodeBlock, DividerBlock, ImageBlock, VideoBlock
+]
 
-@router.get("", response_model=List[Union[TextBlock, ImageBlock]])
+
+@router.get("", response_model=List[BlockType])
 async def get_blocks():
     """Get all blocks"""
     try:
@@ -19,7 +29,7 @@ async def get_blocks():
         raise HTTPException(status_code=500, detail=f"Failed to fetch blocks: {str(e)}")
 
 
-@router.get("/{block_id}", response_model=Union[TextBlock, ImageBlock])
+@router.get("/{block_id}", response_model=BlockType)
 async def get_block(block_id: str):
     """Get a specific block by ID"""
     try:
@@ -33,7 +43,7 @@ async def get_block(block_id: str):
         raise HTTPException(status_code=500, detail=f"Failed to fetch block: {str(e)}")
 
 
-@router.post("", response_model=Union[TextBlock, ImageBlock], status_code=201)
+@router.post("", response_model=BlockType, status_code=201)
 async def create_block(block: BlockCreate):
     """Create a new block"""
     try:
@@ -52,7 +62,7 @@ async def create_block(block: BlockCreate):
         raise HTTPException(status_code=500, detail=f"Failed to create block: {str(e)}")
 
 
-@router.put("/{block_id}", response_model=Union[TextBlock, ImageBlock])
+@router.put("/{block_id}", response_model=BlockType)
 async def update_block(block_id: str, updates: BlockUpdate):
     """Update a block by ID"""
     try:
