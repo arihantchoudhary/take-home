@@ -1,10 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routers import blocks
+from routers import blocks, pages
 
 app = FastAPI(
-    title="Block Management API",
-    description="API for managing text and image blocks",
+    title="Notion-like API",
+    description="API for managing pages and blocks in a Notion-like application",
     version="1.0.0"
 )
 
@@ -19,20 +19,36 @@ app.add_middleware(
 
 # Include routers
 app.include_router(blocks.router)
+app.include_router(pages.router)
 
 
 @app.get("/")
 async def root():
     """Root endpoint with API information"""
     return {
-        "message": "Block Management API",
+        "message": "Notion-like API",
         "version": "1.0.0",
         "endpoints": {
-            "GET /blocks": "Get all blocks",
-            "POST /blocks": "Create a new block",
-            "GET /blocks/{id}": "Get a specific block by ID",
-            "PUT /blocks/{id}": "Update a block by ID",
-            "DELETE /blocks/{id}": "Delete a block by ID"
+            "blocks": {
+                "GET /blocks": "Get all blocks",
+                "POST /blocks": "Create a new block",
+                "GET /blocks/{id}": "Get a specific block by ID",
+                "PUT /blocks/{id}": "Update a block by ID",
+                "DELETE /blocks/{id}": "Delete a block by ID",
+                "POST /blocks/{id}/duplicate": "Duplicate a block",
+                "PUT /blocks/reorder": "Reorder blocks"
+            },
+            "pages": {
+                "GET /pages": "Get all pages (supports filters)",
+                "POST /pages": "Create a new page",
+                "GET /pages/{id}": "Get a specific page by ID",
+                "PUT /pages/{id}": "Update a page by ID",
+                "DELETE /pages/{id}": "Delete a page by ID",
+                "GET /pages/{id}/children": "Get child pages",
+                "POST /pages/{id}/duplicate": "Duplicate a page",
+                "PUT /pages/{id}/move": "Move a page",
+                "PUT /pages/{id}/favorite": "Toggle favorite status"
+            }
         }
     }
 
