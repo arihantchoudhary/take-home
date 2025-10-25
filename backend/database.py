@@ -81,3 +81,44 @@ def block_exists(block_id: str) -> bool:
     """Check if a block with given ID exists"""
     blocks = read_blocks()
     return any(b["id"] == block_id for b in blocks)
+
+
+def duplicate_block(block_id: str) -> dict | None:
+    """Duplicate a block by ID"""
+    import uuid
+    blocks = read_blocks()
+
+    # Find the block to duplicate
+    for i, block in enumerate(blocks):
+        if block["id"] == block_id:
+            # Create a copy with a new ID
+            duplicated = block.copy()
+            duplicated["id"] = str(uuid.uuid4())
+
+            # Insert the duplicated block right after the original
+            blocks.insert(i + 1, duplicated)
+            write_blocks(blocks)
+            return duplicated
+
+    return None
+
+
+def reorder_blocks(block_ids: List[str]) -> List[dict] | None:
+    """Reorder blocks by providing a new order of block IDs"""
+    blocks = read_blocks()
+
+    # Verify all block IDs exist
+    existing_ids = {b["id"] for b in blocks}
+    provided_ids = set(block_ids)
+
+    if existing_ids != provided_ids:
+        return None
+
+    # Create a mapping of id to block
+    block_map = {b["id"]: b for b in blocks}
+
+    # Reorder blocks according to the provided IDs
+    reordered = [block_map[block_id] for block_id in block_ids]
+
+    write_blocks(reordered)
+    return reordered

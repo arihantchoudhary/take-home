@@ -96,3 +96,35 @@ async def delete_block(block_id: str):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to delete block: {str(e)}")
+
+
+@router.post("/{block_id}/duplicate", response_model=BlockType, status_code=201)
+async def duplicate_block(block_id: str):
+    """Duplicate a block by ID"""
+    try:
+        duplicated_block = db.duplicate_block(block_id)
+
+        if duplicated_block is None:
+            raise HTTPException(status_code=404, detail="Block not found")
+
+        return duplicated_block
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to duplicate block: {str(e)}")
+
+
+@router.put("/reorder", response_model=List[BlockType])
+async def reorder_blocks(block_ids: List[str]):
+    """Reorder blocks by providing a new order of block IDs"""
+    try:
+        reordered_blocks = db.reorder_blocks(block_ids)
+
+        if reordered_blocks is None:
+            raise HTTPException(status_code=400, detail="Invalid block IDs provided")
+
+        return reordered_blocks
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to reorder blocks: {str(e)}")
