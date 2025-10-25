@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routers import blocks, pages, search
+from routers import blocks, pages, search, comments, activities, shares
 
 app = FastAPI(
     title="Notion-like API",
@@ -21,6 +21,9 @@ app.add_middleware(
 app.include_router(blocks.router)
 app.include_router(pages.router)
 app.include_router(search.router)
+app.include_router(comments.router)
+app.include_router(activities.router)
+app.include_router(shares.router)
 
 
 @app.get("/")
@@ -52,6 +55,23 @@ async def root():
             },
             "search": {
                 "GET /search": "Search across pages and blocks"
+            },
+            "comments": {
+                "GET /comments": "Get comments (filter by block or page)",
+                "POST /comments": "Create a new comment",
+                "PUT /comments/{id}": "Update a comment",
+                "DELETE /comments/{id}": "Delete a comment",
+                "PUT /comments/{id}/resolve": "Resolve a comment"
+            },
+            "activities": {
+                "GET /activities/{user_id}": "Get user activities (mentions, updates)",
+                "PUT /activities/{id}/read": "Mark activity as read",
+                "PUT /activities/users/{user_id}/read-all": "Mark all activities as read"
+            },
+            "shares": {
+                "GET /shares/pages/{page_id}": "Get page shares",
+                "POST /shares": "Share a page with a user",
+                "DELETE /shares/{id}": "Remove a page share"
             }
         }
     }
