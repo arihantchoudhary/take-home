@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routers import blocks, pages
+from routers import blocks, pages, search
 
 app = FastAPI(
     title="Notion-like API",
@@ -20,6 +20,7 @@ app.add_middleware(
 # Include routers
 app.include_router(blocks.router)
 app.include_router(pages.router)
+app.include_router(search.router)
 
 
 @app.get("/")
@@ -48,6 +49,9 @@ async def root():
                 "POST /pages/{id}/duplicate": "Duplicate a page",
                 "PUT /pages/{id}/move": "Move a page",
                 "PUT /pages/{id}/favorite": "Toggle favorite status"
+            },
+            "search": {
+                "GET /search": "Search across pages and blocks"
             }
         }
     }
