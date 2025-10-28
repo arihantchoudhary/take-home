@@ -19,6 +19,23 @@ function App() {
   const [showHelp, setShowHelp] = useState(false);
   const [isFilePickerOpen, setIsFilePickerOpen] = useState(false);
 
+  // Close emoji picker when clicking outside
+  useEffect(() => {
+    if (showEmojiPicker) {
+      const handleClickOutside = (e: MouseEvent) => {
+        const target = e.target as HTMLElement;
+        // Check if click is outside emoji picker and page icon
+        if (!target.closest('.emoji-picker') && !target.closest('.page-icon')) {
+          console.log('[APP] 🖱️ Clicked outside emoji picker, closing');
+          setShowEmojiPicker(false);
+        }
+      };
+
+      document.addEventListener('click', handleClickOutside);
+      return () => document.removeEventListener('click', handleClickOutside);
+    }
+  }, [showEmojiPicker]);
+
   const handleCoverImageUpload = async (file: File) => {
     console.log('[APP] 📁 File selected:', file.name, file.type, file.size);
     // For now, we'll use a simple file-to-data-URL approach
@@ -387,19 +404,11 @@ function App() {
               {pageIcon}
             </div>
             {showEmojiPicker && (
-              <>
-                <div
-                  className="emoji-picker-backdrop"
-                  onClick={() => {
-                    console.log('[APP] 🖱️ Backdrop clicked, closing emoji picker');
-                    setShowEmojiPicker(false);
-                  }}
-                />
-                <div className="emoji-picker" onClick={(e) => {
-                  console.log('[APP] 🎯 Emoji picker clicked (stopping propagation)');
-                  e.stopPropagation();
-                }}>
-                  {[
+              <div className="emoji-picker" onClick={(e) => {
+                console.log('[APP] 🎯 Emoji picker clicked (stopping propagation)');
+                e.stopPropagation();
+              }}>
+                {[
                     '📄', '📝', '📌', '📍', '📎', '📋', '📊', '📈', '📉', '🗂️',
                     '📁', '📂', '🗃️', '📚', '📖', '📕', '📗', '📘', '📙', '📓',
                     '📔', '📒', '📰', '🗞️', '💡', '🔥', '✨', '🎯', '🎨', '🎭',
@@ -450,8 +459,7 @@ function App() {
                       {emoji}
                     </button>
                   ))}
-                </div>
-              </>
+              </div>
             )}
             <h1
               className="page-title-large"
