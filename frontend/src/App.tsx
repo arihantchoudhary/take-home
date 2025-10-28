@@ -68,6 +68,23 @@ function App() {
     }
   };
 
+  const handleConvertBlock = async (block: Block, newType: 'text' | 'image', textType?: string) => {
+    try {
+      if (newType === 'text' && textType) {
+        const updatedBlock = {
+          ...block,
+          type: 'text' as const,
+          textType: textType as any,
+        };
+        await api.updateBlock(block.id, updatedBlock);
+        await loadBlocks();
+      }
+    } catch (err) {
+      alert('Failed to convert block');
+      console.error('Error converting block:', err);
+    }
+  };
+
   if (loading) {
     return (
       <div className="loading-container">
@@ -130,6 +147,7 @@ function App() {
                 block={block}
                 onEdit={handleEditBlock}
                 onDelete={handleDeleteBlock}
+                onConvert={handleConvertBlock}
               />
             ))}
 
