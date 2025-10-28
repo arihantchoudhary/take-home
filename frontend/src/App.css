@@ -67,13 +67,14 @@ body {
 
 /* Cover image */
 .cover-image-container {
-  position: fixed;
-  top: 45px;
-  left: 0;
-  right: 0;
+  position: relative;
+  width: calc(100% + 192px);
+  margin-left: -96px;
+  margin-top: -96px;
+  margin-bottom: 32px;
   height: 280px;
   overflow: hidden;
-  z-index: 0;
+  border-radius: 0;
 }
 
 .cover-image {
