@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import * as db from '../dynamodb';
+import * as db from '../database';
 
 const router = Router();
 

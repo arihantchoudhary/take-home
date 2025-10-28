@@ -1,20 +1,30 @@
 import { Router, Request, Response } from 'express';
-import * as db from '../dynamodb';
+import * as db from '../database';
 import { Block } from '../types';
 
 const router = Router();
 
+// GET /api/blocks - Get all blocks
+router.get('/', async (req: Request, res: Response) => {
+  try {
+    const blocks = await db.getAllBlocks();
+    res.json(blocks);
+  } catch (error) {
+    console.error('Error fetching blocks:', error);
+    res.status(500).json({ error: 'Failed to fetch blocks' });
+  }
+});
+
 // POST /api/blocks - Create a new block
 router.post('/', async (req: Request, res: Response) => {
   try {
-    const blockData: Partial<Block> = req.body;
-    const userId = req.body.userId || 'default-user';
+    const blockData: Block = req.body;
 
     if (!blockData.pageId || !blockData.type) {
       return res.status(400).json({ error: 'Missing required fields: pageId, type' });
     }
 
-    const block = await db.createBlock(blockData, userId);
+    const block = await db.createBlock(blockData);
     res.status(201).json(block);
   } catch (error) {
     console.error('Error creating block:', error);
@@ -26,7 +36,7 @@ router.post('/', async (req: Request, res: Response) => {
 router.get('/:blockId', async (req: Request, res: Response) => {
   try {
     const { blockId } = req.params;
-    const block = await db.getBlock(blockId);
+    const block = await db.getBlockById(blockId);
 
     if (!block) {
       return res.status(404).json({ error: 'Block not found' });
@@ -44,9 +54,8 @@ router.put('/:blockId', async (req: Request, res: Response) => {
   try {
     const { blockId } = req.params;
     const updates: Partial<Block> = req.body;
-    const userId = req.body.userId || 'default-user';
 
-    const block = await db.updateBlock(blockId, updates, userId);
+    const block = await db.updateBlock(blockId, updates);
 
     if (!block) {
       return res.status(404).json({ error: 'Block not found' });
