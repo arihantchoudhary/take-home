@@ -3,7 +3,6 @@ import cors from 'cors';
 
 // Import routes
 import blocksRouter from './routes/blocks-simple';
-import imagesRouter from './routes/images';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -20,7 +19,6 @@ app.use((req, res, next) => {
 
 // API Routes
 app.use('/api/blocks', blocksRouter);
-app.use('/api/images', imagesRouter);
 
 // Health check endpoint
 app.get('/health', async (req: Request, res: Response) => {
@@ -45,7 +43,6 @@ app.get('/', (req: Request, res: Response) => {
     version: '1.0.0',
     endpoints: {
       blocks: '/api/blocks',
-      images: '/api/images',
       health: '/health'
     }
   });
