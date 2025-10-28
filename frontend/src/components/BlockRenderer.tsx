@@ -95,6 +95,24 @@ export const BlockRenderer: React.FC<BlockRendererProps> = ({ block, onDelete, o
         setShowImageModal(true);
       } else if (onConvert && item.textType) {
         onConvert(block, 'text', item.textType);
+
+        // Focus the text element after conversion so user can continue typing
+        setTimeout(() => {
+          if (textRef.current) {
+            textRef.current.focus();
+
+            // Move cursor to the end of text
+            const range = document.createRange();
+            const sel = window.getSelection();
+            const textNode = textRef.current.childNodes[0] || textRef.current;
+
+            range.selectNodeContents(textNode);
+            range.collapse(false); // false means collapse to end
+
+            sel?.removeAllRanges();
+            sel?.addRange(range);
+          }
+        }, 0);
       }
     };
 
