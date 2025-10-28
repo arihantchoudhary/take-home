@@ -83,22 +83,25 @@ function App() {
     }
   };
 
-  useEffect(() => {
-    loadBlocks();
-    loadPageMetadata();
-  }, []);
-
   const loadPageMetadata = async () => {
+    console.log('[APP] 📖 Loading page metadata...');
     try {
       const metadata = await api.fetchPageMetadata();
+      console.log('[APP] ✅ Page metadata loaded:', metadata);
       setPageTitle(metadata.title);
       setPageIcon(metadata.icon);
       setCoverImage(metadata.coverImage);
+      console.log('[APP] ✅ Page metadata state updated');
     } catch (err) {
       console.error('[APP] ❌ Error loading page metadata:', err);
       // Use default values on error
     }
   };
+
+  useEffect(() => {
+    loadBlocks();
+    loadPageMetadata();
+  }, []);
 
   const loadBlocks = async () => {
 

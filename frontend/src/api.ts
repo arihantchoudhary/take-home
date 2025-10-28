@@ -112,8 +112,10 @@ export interface PageMetadata {
 }
 
 export async function fetchPageMetadata(): Promise<PageMetadata> {
+  console.log('[API] 📖 Fetching page metadata from:', `${API_BASE_URL}/pages/default`);
   try {
     const response = await fetch(`${API_BASE_URL}/pages/default`);
+    console.log('[API] 📡 Response status:', response.status);
 
     if (!response.ok) {
       console.error('[API] ❌ FETCH PAGE METADATA FAILED - Bad response');
@@ -121,6 +123,7 @@ export async function fetchPageMetadata(): Promise<PageMetadata> {
     }
 
     const data = await response.json();
+    console.log('[API] ✅ Page metadata fetched:', data);
     return data;
   } catch (error) {
     console.error('[API] ❌ FETCH PAGE METADATA ERROR:', error);
