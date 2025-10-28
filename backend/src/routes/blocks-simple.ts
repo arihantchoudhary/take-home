@@ -16,7 +16,9 @@ async function readBlocks() {
   try {
     await ensureDataDir();
     const data = await fs.readFile(BLOCKS_FILE, 'utf-8');
-    return JSON.parse(data);
+    const parsed = JSON.parse(data);
+    // Return array directly, or empty array if not an array
+    return Array.isArray(parsed) ? parsed : [];
   } catch (error) {
     // If file doesn't exist, return empty array
     return [];
