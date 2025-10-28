@@ -251,7 +251,30 @@ function App() {
 
       {/* Main content */}
       <div className="page-container">
-        <div className="page-content">
+        {/* Cover image - positioned absolutely */}
+        {coverImage && (
+          <div className="cover-image-container">
+            <img src={coverImage} alt="Cover" className="cover-image" />
+            <button
+              className="remove-cover-btn"
+              onClick={async () => {
+                setCoverImage(null);
+                // Persist to backend
+                try {
+                  await api.updatePageMetadata({ coverImage: null });
+                  console.log('[APP] ✅ Cover removed and persisted');
+                } catch (err) {
+                  console.error('[APP] ❌ Error persisting cover removal:', err);
+                }
+              }}
+              title="Remove cover"
+            >
+              × Remove cover
+            </button>
+          </div>
+        )}
+
+        <div className={`page-content ${coverImage ? 'has-cover' : ''}`}>
           {/* Error message */}
           {error && (
             <div style={{
@@ -267,32 +290,12 @@ function App() {
             </div>
           )}
 
-          {/* Cover image */}
-          {coverImage && (
-            <div className="cover-image-container">
-              <img src={coverImage} alt="Cover" className="cover-image" />
-              <button
-                className="remove-cover-btn"
-                onClick={async () => {
-                  setCoverImage(null);
-                  // Persist to backend
-                  try {
-                    await api.updatePageMetadata({ coverImage: null });
-                    console.log('[APP] ✅ Cover removed and persisted');
-                  } catch (err) {
-                    console.error('[APP] ❌ Error persisting cover removal:', err);
-                  }
-                }}
-                title="Remove cover"
-              >
-                × Remove cover
-              </button>
-            </div>
-          )}
-
           {/* Add cover button */}
           {!coverImage && (
             <div className="add-cover-container">
+              <div className="cover-placeholder">
+                🖼️ Cover image area
+              </div>
               {!showCoverInput ? (
                 <button
                   className="add-cover-btn"
@@ -394,17 +397,55 @@ function App() {
 
           {/* Page icon and title */}
           <div className="page-header">
-            <div
-              className="page-icon"
-              onClick={(e) => {
-                console.log('[APP] 🎨 Page icon clicked');
-                e.stopPropagation();
-                setShowEmojiPicker(!showEmojiPicker);
-                console.log('[APP] 📌 Emoji picker toggled:', !showEmojiPicker);
-              }}
-              title="Change icon"
-            >
-              {pageIcon}
+            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+              <div
+                className="page-icon"
+                onClick={(e) => {
+                  console.log('[APP] 🎨 Page icon clicked');
+                  e.stopPropagation();
+                  setShowEmojiPicker(!showEmojiPicker);
+                  console.log('[APP] 📌 Emoji picker toggled:', !showEmojiPicker);
+                }}
+                title="Click to change icon"
+              >
+                {pageIcon}
+              </div>
+
+              {/* Simple text input for emoji */}
+              <input
+                type="text"
+                className="emoji-text-input"
+                placeholder="Type or paste emoji"
+                maxLength={2}
+                style={{
+                  width: '120px',
+                  padding: '4px 8px',
+                  fontSize: '14px',
+                  border: '1px solid rgba(55, 53, 47, 0.16)',
+                  borderRadius: '4px',
+                  outline: 'none'
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    const emoji = e.currentTarget.value.trim();
+                    if (emoji) {
+                      console.log('[APP] ⌨️ Emoji entered via keyboard:', emoji);
+                      setPageIcon(emoji);
+                      e.currentTarget.value = '';
+                      console.log('[APP] ✅ Icon set to:', emoji);
+                    }
+                  }
+                }}
+                onBlur={(e) => {
+                  const emoji = e.currentTarget.value.trim();
+                  if (emoji) {
+                    console.log('[APP] 👋 Emoji input blurred with value:', emoji);
+                    setPageIcon(emoji);
+                    e.currentTarget.value = '';
+                    console.log('[APP] ✅ Icon set to:', emoji);
+                  }
+                }}
+              />
             </div>
             {showEmojiPicker && (
               <div className="emoji-picker" onClick={(e) => {
