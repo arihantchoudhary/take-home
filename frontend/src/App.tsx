@@ -263,10 +263,8 @@ function App() {
                   <label
                     htmlFor="cover-file-input"
                     className="cover-upload-btn"
-                    onMouseDown={(e) => {
-                      console.log('[APP] 🖱️ Upload button mouse down - preventing default');
-                      // Prevent the URL input from losing focus
-                      e.preventDefault();
+                    onClick={() => {
+                      console.log('[APP] 🖱️ Upload Image button clicked - file picker should open');
                     }}
                   >
                     📁 Upload Image
@@ -295,7 +293,8 @@ function App() {
                       console.log('[APP] 🎯 Related target:', e.relatedTarget);
                       // Don't close if clicking on the file upload label
                       const relatedTarget = e.relatedTarget as HTMLElement;
-                      if (relatedTarget?.id === 'cover-file-input' || relatedTarget?.htmlFor === 'cover-file-input') {
+                      const isLabel = relatedTarget instanceof HTMLLabelElement;
+                      if (relatedTarget?.id === 'cover-file-input' || (isLabel && (relatedTarget as HTMLLabelElement).htmlFor === 'cover-file-input')) {
                         console.log('[APP] ⏭️ Clicked on upload button, keeping input open');
                         return;
                       }
