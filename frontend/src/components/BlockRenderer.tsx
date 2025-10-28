@@ -4,12 +4,11 @@ import { SlashCommandMenu } from './SlashCommandMenu';
 
 interface BlockRendererProps {
   block: Block;
-  onEdit: (block: Block) => void;
   onDelete: (id: string) => void;
   onConvert?: (block: Block, newType: 'text' | 'image', textType?: string) => void;
 }
 
-export const BlockRenderer: React.FC<BlockRendererProps> = ({ block, onEdit, onDelete, onConvert }) => {
+export const BlockRenderer: React.FC<BlockRendererProps> = ({ block, onDelete, onConvert }) => {
   const [showSlashMenu, setShowSlashMenu] = useState(false);
   const [slashMenuPosition, setSlashMenuPosition] = useState({ top: 0, left: 0 });
   const [slashFilter, setSlashFilter] = useState('');
@@ -141,16 +140,6 @@ export const BlockRenderer: React.FC<BlockRendererProps> = ({ block, onEdit, onD
       <div className="block-wrapper">
         <div className="block-actions">
           <button className="block-drag-handle" title="Drag">⋮⋮</button>
-          <button
-            className="block-edit-btn"
-            onClick={(e) => {
-              e.stopPropagation();
-              onEdit(block);
-            }}
-            title="Edit"
-          >
-            ✎
-          </button>
           <button
             className="block-delete-btn"
             onClick={(e) => {
