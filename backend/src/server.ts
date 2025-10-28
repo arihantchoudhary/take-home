@@ -1,9 +1,8 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
-import { DynamoDBClient, ListTablesCommand } from '@aws-sdk/client-dynamodb';
 
 // Import routes
-import blocksRouter from './routes/blocks';
+import blocksRouter from './routes/blocks-simple';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
