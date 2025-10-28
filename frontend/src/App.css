@@ -190,11 +190,16 @@ body {
 /* Block actions */
 .block-actions {
   position: absolute;
-  left: -30px;
-  top: 50%;
-  transform: translateY(-50%);
+  left: -52px;
+  top: 3px;
   display: flex;
   gap: 2px;
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+
+.block-wrapper:hover .block-actions {
+  opacity: 1;
 }
 
 .block-drag-handle, .block-edit-btn, .block-delete-btn {
