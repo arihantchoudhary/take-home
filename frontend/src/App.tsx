@@ -18,43 +18,23 @@ function App() {
   const [showCoverInput, setShowCoverInput] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
 
-  // Unused for now - cover image upload handlers
-  // const handleCoverImageUpload = async (file: File) => {
-  //   console.log('[APP] 🖼️ COVER IMAGE UPLOAD - Starting');
-  //   console.log('[APP] 📁 File:', file.name, file.type, file.size);
-  //
-  //   try {
-  //     // Convert to base64
-  //     const reader = new FileReader();
-  //     reader.onload = (e) => {
-  //       const base64 = e.target?.result as string;
-  //       console.log('[APP] ✅ Image converted to base64');
-  //       console.log('[APP] 📏 Base64 length:', base64.length);
-  //       setCoverImage(base64);
-  //       console.log('[APP] 💾 Cover image state updated');
-  //     };
-  //     reader.onerror = (error) => {
-  //       console.error('[APP] ❌ Error reading file:', error);
-  //     };
-  //     reader.readAsDataURL(file);
-  //   } catch (err) {
-  //     console.error('[APP] ❌ Cover upload failed:', err);
-  //   }
-  // };
-  //
-  // const handleCoverUrlSubmit = (url: string) => {
-  //   console.log('[APP] 🖼️ COVER URL SUBMIT - Starting');
-  //   console.log('[APP] 🔗 URL:', url);
-  //
-  //   if (url) {
-  //     console.log('[APP] ✅ URL is valid, setting cover image');
-  //     setCoverImage(url);
-  //     setShowCoverInput(false);
-  //     console.log('[APP] 💾 Cover image state updated');
-  //   } else {
-  //     console.log('[APP] ⚠️ URL is empty, not setting cover');
-  //   }
-  // };
+  const handleCoverImageUpload = async (file: File) => {
+    // For now, we'll use a simple file-to-data-URL approach
+    // In production, you'd upload to S3 and get back a URL
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setCoverImage(reader.result as string);
+      setShowCoverInput(false);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleCoverUrlSubmit = (url: string) => {
+    if (url) {
+      setCoverImage(url);
+      setShowCoverInput(false);
+    }
+  };
 
   useEffect(() => {
     loadBlocks();
@@ -244,12 +224,32 @@ function App() {
               {!showCoverInput ? (
                 <button
                   className="add-cover-btn"
-                  onClick={() => setShowCoverInput(true)}
+                  onClick={() => {
+                    console.log('[APP] 🖼️ Add cover button clicked');
+                    setShowCoverInput(true);
+                  }}
                 >
                   🖼️ Add cover
                 </button>
               ) : (
                 <div className="cover-input-container">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    id="cover-file-input"
+                    style={{ display: 'none' }}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        handleCoverImageUpload(file);
+                        setShowCoverInput(false);
+                      }
+                    }}
+                  />
+                  <label htmlFor="cover-file-input" className="cover-upload-btn">
+                    📁 Upload Image
+                  </label>
+                  <span className="cover-input-divider">or</span>
                   <input
                     type="url"
                     className="cover-url-input"
@@ -258,20 +258,20 @@ function App() {
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') {
                         const url = e.currentTarget.value.trim();
-                        if (url) {
-                          setCoverImage(url);
-                          setShowCoverInput(false);
-                          e.currentTarget.value = '';
-                        }
+                        handleCoverUrlSubmit(url);
+                        e.currentTarget.value = '';
                       } else if (e.key === 'Escape') {
                         setShowCoverInput(false);
                         e.currentTarget.value = '';
                       }
                     }}
-                    onBlur={() => setShowCoverInput(false)}
+                    onBlur={() => {
+                      console.log('[APP] 👋 Cover input blurred');
+                      setTimeout(() => setShowCoverInput(false), 200);
+                    }}
                   />
                   <div className="cover-input-hint">
-                    Press Enter to add • Escape to cancel
+                    Upload a file or paste URL • Press Enter • Esc to cancel
                   </div>
                 </div>
               )}
