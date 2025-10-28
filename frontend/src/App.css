@@ -1,0 +1,44 @@
+.app {
+  min-height: 100vh;
+  background-color: #f9f9f9;
+}
+
+.blocks-container {
+  padding: 20px 0;
+}
+
+.block-wrapper {
+  background-color: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  transition: box-shadow 0.2s;
+}
+
+.block-wrapper:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+h1, h2, h3, p {
+  margin: 0;
+  padding: 12px 16px;
+}
+
+h1 {
+  font-size: 32px;
+  font-weight: bold;
+}
+
+h2 {
+  font-size: 24px;
+  font-weight: bold;
+}
+
+h3 {
+  font-size: 20px;
+  font-weight: bold;
+}
+
+p {
+  font-size: 16px;
+  line-height: 1.6;
+}
