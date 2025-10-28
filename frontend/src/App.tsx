@@ -11,6 +11,7 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [editingBlock, setEditingBlock] = useState<Block | undefined>(undefined);
+  const [pageTitle, setPageTitle] = useState('Untitled');
 
   useEffect(() => {
     loadBlocks();
@@ -80,7 +81,7 @@ function App() {
       {/* Top bar */}
       <div className="top-bar">
         <div className="top-bar-content">
-          <div className="page-title">Untitled</div>
+          <div className="page-title">{pageTitle}</div>
         </div>
       </div>
 
@@ -105,8 +106,19 @@ function App() {
           {/* Page icon and title */}
           <div className="page-header">
             <div className="page-icon">📄</div>
-            <h1 className="page-title-large" contentEditable suppressContentEditableWarning>
-              Untitled
+            <h1
+              className="page-title-large"
+              contentEditable
+              suppressContentEditableWarning
+              onBlur={(e) => setPageTitle(e.currentTarget.textContent || 'Untitled')}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  e.currentTarget.blur();
+                }
+              }}
+            >
+              {pageTitle}
             </h1>
           </div>
 

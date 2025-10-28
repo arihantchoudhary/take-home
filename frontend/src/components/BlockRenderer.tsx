@@ -30,7 +30,6 @@ export const BlockRenderer: React.FC<BlockRendererProps> = ({ block, onEdit, onD
     return (
       <div
         className="block-wrapper"
-        onClick={() => onEdit(block)}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
@@ -49,8 +48,18 @@ export const BlockRenderer: React.FC<BlockRendererProps> = ({ block, onEdit, onD
             </button>
           </div>
         )}
-        <Tag className={getClassName()}>
-          {textBlock.value || 'Empty'}
+        <Tag
+          className={getClassName()}
+          contentEditable
+          suppressContentEditableWarning
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault();
+              // TODO: Create new block below
+            }
+          }}
+        >
+          {textBlock.value || ''}
         </Tag>
       </div>
     );
@@ -61,13 +70,22 @@ export const BlockRenderer: React.FC<BlockRendererProps> = ({ block, onEdit, onD
     return (
       <div
         className="block-wrapper"
-        onClick={() => onEdit(block)}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
         {isHovered && (
           <div className="block-actions">
             <button className="block-drag-handle" title="Drag">⋮⋮</button>
+            <button
+              className="block-edit-btn"
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit(block);
+              }}
+              title="Edit"
+            >
+              ✎
+            </button>
             <button
               className="block-delete-btn"
               onClick={(e) => {

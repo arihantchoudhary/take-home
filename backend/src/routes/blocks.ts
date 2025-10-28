@@ -4,11 +4,26 @@ import { Block } from '../types';
 
 const router = Router();
 
-// GET /api/blocks - Get all blocks
+// GET /api/blocks?pageId=xxx - Get blocks for a page (or all if no pageId)
 router.get('/', async (req: Request, res: Response) => {
   try {
-    const blocks = await db.getAllBlocks();
-    res.json(blocks);
+    const { pageId } = req.query;
+
+    let blocks;
+    if (pageId && typeof pageId === 'string') {
+      blocks = await db.getBlocksByPage(pageId);
+    } else {
+      // Return all blocks if no pageId specified (for backward compatibility)
+      blocks = await db.getAllBlocks();
+    }
+
+    // Transform backend schema to frontend schema
+    const response = blocks.map(block => ({
+      ...block,
+      id: block.blockId,
+    }));
+
+    res.json(response);
   } catch (error) {
     console.error('Error fetching blocks:', error);
     res.status(500).json({ error: 'Failed to fetch blocks' });
@@ -18,14 +33,36 @@ router.get('/', async (req: Request, res: Response) => {
 // POST /api/blocks - Create a new block
 router.post('/', async (req: Request, res: Response) => {
   try {
-    const blockData: Block = req.body;
+    const incomingData = req.body;
 
-    if (!blockData.pageId || !blockData.type) {
-      return res.status(400).json({ error: 'Missing required fields: pageId, type' });
+    if (!incomingData.type) {
+      return res.status(400).json({ error: 'Missing required field: type' });
     }
 
+    // Transform frontend schema to backend schema
+    const now = Date.now();
+    const blockData: Block = {
+      ...incomingData,
+      blockId: incomingData.id || incomingData.blockId || `block_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      pageId: incomingData.pageId || 'default-page',
+      order: incomingData.order || 0,
+      createdAt: incomingData.createdAt || now,
+      updatedAt: incomingData.updatedAt || now,
+      createdBy: incomingData.createdBy || 'anonymous',
+    } as Block;
+
+    // Remove the old 'id' field if it exists
+    delete (blockData as any).id;
+
     const block = await db.createBlock(blockData);
-    res.status(201).json(block);
+
+    // Transform back to frontend schema for response
+    const response = {
+      ...block,
+      id: block.blockId,
+    };
+
+    res.status(201).json(response);
   } catch (error) {
     console.error('Error creating block:', error);
     res.status(500).json({ error: 'Failed to create block' });
@@ -36,7 +73,7 @@ router.post('/', async (req: Request, res: Response) => {
 router.get('/:blockId', async (req: Request, res: Response) => {
   try {
     const { blockId } = req.params;
-    const block = await db.getBlockById(blockId);
+    const block = await db.getBlock(blockId);
 
     if (!block) {
       return res.status(404).json({ error: 'Block not found' });
@@ -53,9 +90,9 @@ router.get('/:blockId', async (req: Request, res: Response) => {
 router.put('/:blockId', async (req: Request, res: Response) => {
   try {
     const { blockId } = req.params;
-    const updates: Partial<Block> = req.body;
+    const { userId = 'default-user', ...updates } = req.body;
 
-    const block = await db.updateBlock(blockId, updates);
+    const block = await db.updateBlock(blockId, updates, userId);
 
     if (!block) {
       return res.status(404).json({ error: 'Block not found' });
