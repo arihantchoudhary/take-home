@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import type { Block } from './types';
 import { BlockRenderer } from './components/BlockRenderer';
 import { HelpModal } from './components/HelpModal';
+import { EmojiPickerModal } from './components/EmojiPickerModal';
 import * as api from './api';
 import './App.css';
 
@@ -13,28 +14,11 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   const [pageTitle, setPageTitle] = useState('Untitled');
   const [pageIcon, setPageIcon] = useState('📄');
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [showEmojiModal, setShowEmojiModal] = useState(false);
   const [coverImage, setCoverImage] = useState<string | null>(null);
   const [showCoverInput, setShowCoverInput] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const [isFilePickerOpen, setIsFilePickerOpen] = useState(false);
-
-  // Close emoji picker when clicking outside
-  useEffect(() => {
-    if (showEmojiPicker) {
-      const handleClickOutside = (e: MouseEvent) => {
-        const target = e.target as HTMLElement;
-        // Check if click is outside emoji picker and page icon
-        if (!target.closest('.emoji-picker') && !target.closest('.page-icon')) {
-          console.log('[APP] 🖱️ Clicked outside emoji picker, closing');
-          setShowEmojiPicker(false);
-        }
-      };
-
-      document.addEventListener('click', handleClickOutside);
-      return () => document.removeEventListener('click', handleClickOutside);
-    }
-  }, [showEmojiPicker]);
 
   const handleCoverImageUpload = async (file: File) => {
     console.log('[APP] 📁 File selected:', file.name, file.type, file.size);
@@ -83,6 +67,15 @@ function App() {
     }
   };
 
+  const handleEmojiSelect = async (emoji: string) => {
+    setPageIcon(emoji);
+    try {
+      await api.updatePageMetadata({ icon: emoji });
+    } catch (err) {
+      console.error('[APP] ❌ Error persisting page icon:', err);
+    }
+  };
+
   const loadPageMetadata = async () => {
     console.log('[APP] 📖 Loading page metadata...');
     try {
@@ -99,6 +92,8 @@ function App() {
   };
 
   useEffect(() => {
+    // Scroll to top on page load
+    window.scrollTo(0, 0);
     loadBlocks();
     loadPageMetadata();
   }, []);
@@ -241,6 +236,12 @@ function App() {
 
       {/* Help modal */}
       <HelpModal isOpen={showHelp} onClose={() => setShowHelp(false)} />
+      <EmojiPickerModal
+        isOpen={showEmojiModal}
+        currentEmoji={pageIcon}
+        onSelect={handleEmojiSelect}
+        onClose={() => setShowEmojiModal(false)}
+      />
 
       {/* Top bar */}
       <div className="top-bar">
@@ -251,30 +252,7 @@ function App() {
 
       {/* Main content */}
       <div className="page-container">
-        {/* Cover image - positioned absolutely */}
-        {coverImage && (
-          <div className="cover-image-container">
-            <img src={coverImage} alt="Cover" className="cover-image" />
-            <button
-              className="remove-cover-btn"
-              onClick={async () => {
-                setCoverImage(null);
-                // Persist to backend
-                try {
-                  await api.updatePageMetadata({ coverImage: null });
-                  console.log('[APP] ✅ Cover removed and persisted');
-                } catch (err) {
-                  console.error('[APP] ❌ Error persisting cover removal:', err);
-                }
-              }}
-              title="Remove cover"
-            >
-              × Remove cover
-            </button>
-          </div>
-        )}
-
-        <div className={`page-content ${coverImage ? 'has-cover' : ''}`}>
+        <div className="page-content">
           {/* Error message */}
           {error && (
             <div style={{
@@ -290,12 +268,32 @@ function App() {
             </div>
           )}
 
+          {/* Cover image */}
+          {coverImage && (
+            <div className="cover-image-container">
+              <img src={coverImage} alt="Cover" className="cover-image" />
+              <button
+                className="remove-cover-btn"
+                onClick={async () => {
+                  setCoverImage(null);
+                  // Persist to backend
+                  try {
+                    await api.updatePageMetadata({ coverImage: null });
+                    console.log('[APP] ✅ Cover removed and persisted');
+                  } catch (err) {
+                    console.error('[APP] ❌ Error persisting cover removal:', err);
+                  }
+                }}
+                title="Remove cover"
+              >
+                × Remove cover
+              </button>
+            </div>
+          )}
+
           {/* Add cover button */}
           {!coverImage && (
             <div className="add-cover-container">
-              <div className="cover-placeholder">
-                🖼️ Cover image area
-              </div>
               {!showCoverInput ? (
                 <button
                   className="add-cover-btn"
@@ -397,114 +395,14 @@ function App() {
 
           {/* Page icon and title */}
           <div className="page-header">
-            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-              <div
-                className="page-icon"
-                onClick={(e) => {
-                  console.log('[APP] 🎨 Page icon clicked');
-                  e.stopPropagation();
-                  setShowEmojiPicker(!showEmojiPicker);
-                  console.log('[APP] 📌 Emoji picker toggled:', !showEmojiPicker);
-                }}
-                title="Click to change icon"
-              >
-                {pageIcon}
-              </div>
-
-              {/* Simple text input for emoji */}
-              <input
-                type="text"
-                className="emoji-text-input"
-                placeholder="Type or paste emoji"
-                maxLength={2}
-                style={{
-                  width: '120px',
-                  padding: '4px 8px',
-                  fontSize: '14px',
-                  border: '1px solid rgba(55, 53, 47, 0.16)',
-                  borderRadius: '4px',
-                  outline: 'none'
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    const emoji = e.currentTarget.value.trim();
-                    if (emoji) {
-                      console.log('[APP] ⌨️ Emoji entered via keyboard:', emoji);
-                      setPageIcon(emoji);
-                      e.currentTarget.value = '';
-                      console.log('[APP] ✅ Icon set to:', emoji);
-                    }
-                  }
-                }}
-                onBlur={(e) => {
-                  const emoji = e.currentTarget.value.trim();
-                  if (emoji) {
-                    console.log('[APP] 👋 Emoji input blurred with value:', emoji);
-                    setPageIcon(emoji);
-                    e.currentTarget.value = '';
-                    console.log('[APP] ✅ Icon set to:', emoji);
-                  }
-                }}
-              />
+            <div
+              className="page-icon"
+              onClick={() => setShowEmojiModal(true)}
+              style={{ cursor: 'pointer' }}
+              title="Click to change icon"
+            >
+              {pageIcon}
             </div>
-            {showEmojiPicker && (
-              <div className="emoji-picker" onClick={(e) => {
-                console.log('[APP] 🎯 Emoji picker clicked (stopping propagation)');
-                e.stopPropagation();
-              }}>
-                {[
-                    '📄', '📝', '📌', '📍', '📎', '📋', '📊', '📈', '📉', '🗂️',
-                    '📁', '📂', '🗃️', '📚', '📖', '📕', '📗', '📘', '📙', '📓',
-                    '📔', '📒', '📰', '🗞️', '💡', '🔥', '✨', '🎯', '🎨', '🎭',
-                    '🎪', '🎬', '🎮', '⚡', '🌟', '🚀', '🎉', '🎊', '🎁', '🏆',
-                    '🥇', '🥈', '🥉', '💎', '👑', '🎓', '💼', '🔬', '🔭', '🎪',
-                    '🎨', '🖼️', '🎭', '🎪', '🎬', '📷', '📹', '🎥', '📺', '📻',
-                    '🎙️', '🎚️', '🎛️', '⏱️', '⏰', '⏲️', '🕰️', '⌚', '📱', '💻',
-                    '⌨️', '🖥️', '🖨️', '🖱️', '🖲️', '🕹️', '💾', '💿', '📀', '🧮',
-                    '🎓', '📚', '📖', '📝', '✏️', '✒️', '🖊️', '🖋️', '📏', '📐',
-                    '🌍', '🌎', '🌏', '🗺️', '🧭', '⛰️', '🏔️', '🗻', '🏕️', '🏖️',
-                    '🏝️', '🏜️', '🏞️', '🏟️', '🏛️', '🏗️', '🏘️', '🏚️', '🏠', '🏡',
-                    '🍎', '🍊', '🍋', '🍌', '🍉', '🍇', '🍓', '🍈', '🍒', '🍑',
-                    '🥭', '🍍', '🥥', '🥝', '🍅', '🥑', '🥦', '🥬', '🥒', '🌶️',
-                    '🌽', '🥕', '🧄', '🧅', '🥔', '🍠', '🥐', '🥯', '🍞', '🥖',
-                    '🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯',
-                    '🦁', '🐮', '🐷', '🐸', '🐵', '🐔', '🐧', '🐦', '🐤', '🦆',
-                    '🦅', '🦉', '🦇', '🐺', '🐗', '🐴', '🦄', '🐝', '🐛', '🦋',
-                    '🐌', '🐞', '🐜', '🦟', '🦗', '🕷️', '🦂', '🐢', '🐍', '🦎',
-                    '🦖', '🦕', '🐙', '🦑', '🦐', '🦞', '🦀', '🐡', '🐠', '🐟',
-                    '🐬', '🐳', '🐋', '🦈', '🐊', '🐅', '🐆', '🦓', '🦍', '🦧'
-                  ].map(emoji => (
-                    <button
-                      key={emoji}
-                      className="emoji-option"
-                      onClick={async (e) => {
-                        console.log('[APP] 😀 Emoji clicked:', emoji);
-                        e.preventDefault();
-                        e.stopPropagation();
-                        console.log('[APP] 💾 Setting page icon to:', emoji);
-                        setPageIcon(emoji);
-                        console.log('[APP] ❌ Closing emoji picker');
-                        setShowEmojiPicker(false);
-                        console.log('[APP] ✅ Emoji picker closed, icon set to:', emoji);
-
-                        // Persist to backend
-                        try {
-                          await api.updatePageMetadata({ icon: emoji });
-                          console.log('[APP] ✅ Page icon persisted:', emoji);
-                        } catch (err) {
-                          console.error('[APP] ❌ Error persisting page icon:', err);
-                        }
-                      }}
-                      onMouseDown={(e) => {
-                        console.log('[APP] 🖱️ Emoji mousedown:', emoji);
-                        e.preventDefault();
-                      }}
-                    >
-                      {emoji}
-                    </button>
-                  ))}
-              </div>
-            )}
             <h1
               className="page-title-large"
               contentEditable
