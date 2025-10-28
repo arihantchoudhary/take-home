@@ -43,10 +43,11 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
           <section className="help-section">
             <h3>🎨 Page Customization</h3>
             <ul>
-              <li><strong>Page Icon:</strong> Click the emoji icon to change it (click outside to close picker)</li>
+              <li><strong>Page Icon:</strong> Click the emoji icon to change it (200+ emojis available!)</li>
               <li><strong>Page Title:</strong> Click the title to edit it inline</li>
-              <li><strong>Cover Image:</strong> Add beautiful cover images to your pages using the "Add Cover" button</li>
-              <li><strong>Remove Cover:</strong> Hover over the cover image to see the remove button</li>
+              <li><strong>Cover Image - Upload:</strong> Click "📁 Upload Image" to select a file from your computer</li>
+              <li><strong>Cover Image - URL:</strong> Paste any image URL and press Enter (supports any HTTPS image link)</li>
+              <li><strong>Remove Cover:</strong> Click "× Remove cover" button on the cover image</li>
             </ul>
           </section>
 
