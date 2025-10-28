@@ -423,6 +423,14 @@ body {
   transition: all 0.12s ease;
 }
 
+.block-drag-handle {
+  cursor: grab;
+}
+
+.block-drag-handle:active {
+  cursor: grabbing;
+}
+
 .block-drag-handle:hover, .block-edit-btn:hover, .block-delete-btn:hover {
   background: rgba(55, 53, 47, 0.06);
 }

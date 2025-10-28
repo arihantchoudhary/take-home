@@ -5,6 +5,7 @@ export interface TextBlock {
   type: 'text';
   textType: TextType;
   value: string;
+  order?: number;
 }
 
 export interface ImageBlock {
@@ -13,6 +14,7 @@ export interface ImageBlock {
   src: string;
   width: number;
   height: number;
+  order?: number;
 }
 
 export type Block = TextBlock | ImageBlock;

@@ -5,6 +5,21 @@ import { HelpModal } from './components/HelpModal';
 import { EmojiPickerModal } from './components/EmojiPickerModal';
 import * as api from './api';
 import './App.css';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
 
 
 function App() {
@@ -19,6 +34,54 @@ function App() {
   const [showCoverInput, setShowCoverInput] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const [isFilePickerOpen, setIsFilePickerOpen] = useState(false);
+
+  // Drag and drop sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8, // 8px of movement required before drag starts
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      setBlocks((items) => {
+        const oldIndex = items.findIndex((item) => item.id === active.id);
+        const newIndex = items.findIndex((item) => item.id === over.id);
+
+        const reorderedBlocks = arrayMove(items, oldIndex, newIndex);
+
+        // Update order field for all blocks
+        const blocksWithOrder = reorderedBlocks.map((block, index) => ({
+          ...block,
+          order: index,
+        }));
+
+        // Save the new order to the backend
+        saveBlocksOrder(blocksWithOrder);
+
+        return blocksWithOrder;
+      });
+    }
+  };
+
+  const saveBlocksOrder = async (orderedBlocks: Block[]) => {
+    try {
+      // Update each block with its new order
+      for (const block of orderedBlocks) {
+        await api.updateBlock(block.id, { ...block, order: block.order });
+      }
+      console.log('[APP] ✅ Block order saved');
+    } catch (err) {
+      console.error('[APP] ❌ Error saving block order:', err);
+    }
+  };
 
   const handleCoverImageUpload = async (file: File) => {
     console.log('[APP] 📁 File selected:', file.name, file.type, file.size);
@@ -431,35 +494,46 @@ function App() {
           </div>
 
           {/* Blocks */}
-          <div
-            className="blocks-list"
-            onClick={(e) => {
-              // If clicking on the empty space (not on a block), create a new block
-              if (e.target === e.currentTarget) {
-                handleAddBlockInline();
-              }
-            }}
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
           >
-            {blocks.map((block) => (
-              <BlockRenderer
-                key={block.id}
-                block={block}
-                onDelete={handleDeleteBlock}
-                onUpdate={handleUpdateBlock}
-                onConvert={handleConvertBlock}
-              />
-            ))}
-
-            {/* Clickable empty area to add blocks */}
-            <div
-              className="empty-click-area"
-              onClick={handleAddBlockInline}
+            <SortableContext
+              items={blocks.map((b) => b.id)}
+              strategy={verticalListSortingStrategy}
             >
-              {blocks.length === 0 && (
-                <div className="empty-state-text">Click anywhere to start typing...</div>
-              )}
-            </div>
-          </div>
+              <div
+                className="blocks-list"
+                onClick={(e) => {
+                  // If clicking on the empty space (not on a block), create a new block
+                  if (e.target === e.currentTarget) {
+                    handleAddBlockInline();
+                  }
+                }}
+              >
+                {blocks.map((block) => (
+                  <BlockRenderer
+                    key={block.id}
+                    block={block}
+                    onDelete={handleDeleteBlock}
+                    onUpdate={handleUpdateBlock}
+                    onConvert={handleConvertBlock}
+                  />
+                ))}
+
+                {/* Clickable empty area to add blocks */}
+                <div
+                  className="empty-click-area"
+                  onClick={handleAddBlockInline}
+                >
+                  {blocks.length === 0 && (
+                    <div className="empty-state-text">Click anywhere to start typing...</div>
+                  )}
+                </div>
+              </div>
+            </SortableContext>
+          </DndContext>
         </div>
       </div>
     </div>

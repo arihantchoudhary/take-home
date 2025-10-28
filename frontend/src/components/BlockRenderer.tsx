@@ -3,6 +3,8 @@ import type { Block, TextBlock, ImageBlock } from '../types';
 import { SlashCommandMenu } from './SlashCommandMenu';
 import { BlockEditor } from './BlockEditor';
 import { ImageUploadModal } from './ImageUploadModal';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 
 interface BlockRendererProps {
@@ -13,6 +15,14 @@ interface BlockRendererProps {
 }
 
 export const BlockRenderer: React.FC<BlockRendererProps> = ({ block, onDelete, onUpdate, onConvert }) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: block.id });
   const [showImageModal, setShowImageModal] = useState(false);
 
   const [showSlashMenu, setShowSlashMenu] = useState(false);
@@ -126,13 +136,28 @@ export const BlockRenderer: React.FC<BlockRendererProps> = ({ block, onDelete, o
       } as Partial<Block>);
     };
 
+    const style = {
+      transform: CSS.Transform.toString(transform),
+      transition,
+      opacity: isDragging ? 0.5 : 1,
+    };
+
     return (
       <>
         <div
+          ref={setNodeRef}
+          style={style}
           className="block-wrapper"
         >
           <div className="block-actions">
-            <button className="block-drag-handle" title="Drag">⋮⋮</button>
+            <button
+              className="block-drag-handle"
+              title="Drag"
+              {...attributes}
+              {...listeners}
+            >
+              ⋮⋮
+            </button>
             <button
               className="block-delete-btn"
               onClick={(e) => {
@@ -206,11 +231,28 @@ export const BlockRenderer: React.FC<BlockRendererProps> = ({ block, onDelete, o
       setShowEditor(false);
     };
 
+    const style = {
+      transform: CSS.Transform.toString(transform),
+      transition,
+      opacity: isDragging ? 0.5 : 1,
+    };
+
     return (
       <>
-        <div className="block-wrapper">
+        <div
+          ref={setNodeRef}
+          style={style}
+          className="block-wrapper"
+        >
           <div className="block-actions">
-            <button className="block-drag-handle" title="Drag">⋮⋮</button>
+            <button
+              className="block-drag-handle"
+              title="Drag"
+              {...attributes}
+              {...listeners}
+            >
+              ⋮⋮
+            </button>
             <button
               className="block-edit-btn"
               onClick={(e) => {
