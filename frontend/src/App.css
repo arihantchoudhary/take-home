@@ -346,6 +346,7 @@ body {
   overflow-y: auto;
   z-index: 1000;
   padding: 4px;
+  pointer-events: auto;
 }
 
 .slash-menu-item {
@@ -356,6 +357,8 @@ body {
   border-radius: 3px;
   cursor: pointer;
   transition: background 0.12s ease;
+  user-select: none;
+  pointer-events: auto;
 }
 
 .slash-menu-item:hover,

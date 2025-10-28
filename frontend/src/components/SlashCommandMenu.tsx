@@ -120,7 +120,15 @@ export const SlashCommandMenu: React.FC<SlashCommandMenuProps> = ({
         <div
           key={item.id}
           className={`slash-menu-item ${index === selectedIndex ? 'selected' : ''}`}
-          onClick={() => onSelect(item)}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onSelect(item);
+          }}
+          onMouseDown={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
           onMouseEnter={() => setSelectedIndex(index)}
         >
           <span className="slash-menu-icon">{item.icon}</span>
