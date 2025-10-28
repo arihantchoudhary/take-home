@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import type { Block, TextBlock, ImageBlock } from '../types';
 import { SlashCommandMenu } from './SlashCommandMenu';
 import { BlockEditor } from './BlockEditor';
+import { ImageUploadModal } from './ImageUploadModal';
 
 
 interface BlockRendererProps {
@@ -12,6 +13,7 @@ interface BlockRendererProps {
 }
 
 export const BlockRenderer: React.FC<BlockRendererProps> = ({ block, onDelete, onUpdate, onConvert }) => {
+  const [showImageModal, setShowImageModal] = useState(false);
 
   const [showSlashMenu, setShowSlashMenu] = useState(false);
   const [slashMenuPosition, setSlashMenuPosition] = useState({ top: 0, left: 0 });
@@ -88,9 +90,22 @@ export const BlockRenderer: React.FC<BlockRendererProps> = ({ block, onDelete, o
 
       setShowSlashMenu(false);
 
-      if (onConvert && item.textType) {
+      if (item.type === 'image') {
+        // Show image upload modal
+        setShowImageModal(true);
+      } else if (onConvert && item.textType) {
         onConvert(block, 'text', item.textType);
       }
+    };
+
+    const handleImageSelect = (imageUrl: string, width?: number, height?: number) => {
+      // Convert current block to image block
+      onUpdate(block.id, {
+        type: 'image',
+        src: imageUrl,
+        width: width || 800,
+        height: height || 600,
+      } as Partial<Block>);
     };
 
     return (
@@ -156,6 +171,11 @@ export const BlockRenderer: React.FC<BlockRendererProps> = ({ block, onDelete, o
             onClose={() => setShowSlashMenu(false)}
           />
         )}
+        <ImageUploadModal
+          isOpen={showImageModal}
+          onClose={() => setShowImageModal(false)}
+          onImageSelect={handleImageSelect}
+        />
       </>
     );
   }

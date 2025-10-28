@@ -17,6 +17,7 @@ function App() {
   const [coverImage, setCoverImage] = useState<string | null>(null);
   const [showCoverInput, setShowCoverInput] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  const [isFilePickerOpen, setIsFilePickerOpen] = useState(false);
 
   const handleCoverImageUpload = async (file: File) => {
     console.log('[APP] 📁 File selected:', file.name, file.type, file.size);
@@ -291,12 +292,19 @@ function App() {
                     style={{ display: 'none' }}
                     onChange={(e) => {
                       console.log('[APP] 📂 File input changed');
+                      setIsFilePickerOpen(false);
                       const file = e.target.files?.[0];
                       if (file) {
                         console.log('[APP] 📁 File selected from input:', file.name);
                         handleCoverImageUpload(file);
                         setShowCoverInput(false);
+                      } else {
+                        console.log('[APP] ❌ No file selected (user cancelled)');
                       }
+                    }}
+                    onFocus={() => {
+                      console.log('[APP] 📂 File input focused - file picker likely closed');
+                      setIsFilePickerOpen(false);
                     }}
                   />
                   <label
@@ -308,7 +316,8 @@ function App() {
                       e.preventDefault();
                     }}
                     onClick={() => {
-                      console.log('[APP] 🖱️ Upload Image button clicked - file picker should open');
+                      console.log('[APP] 🖱️ Upload Image button clicked - file picker opening');
+                      setIsFilePickerOpen(true);
                     }}
                   >
                     📁 Upload Image
@@ -335,13 +344,23 @@ function App() {
                     onBlur={(e) => {
                       console.log('[APP] 👋 Cover input blurred');
                       console.log('[APP] 🎯 Related target:', e.relatedTarget);
+                      console.log('[APP] 📁 File picker open?', isFilePickerOpen);
 
-                      // The mousedown preventDefault on the label prevents blur when clicking upload button
-                      // So we can safely close after a short delay for any other blur events
+                      // Don't close if file picker is open
+                      if (isFilePickerOpen) {
+                        console.log('[APP] ⏸️ File picker is open, keeping cover input visible');
+                        return;
+                      }
+
+                      // Close after a short delay for other blur events
                       console.log('[APP] 🕐 Setting 200ms timeout to close input');
                       setTimeout(() => {
-                        console.log('[APP] ❌ Closing cover input after timeout');
-                        setShowCoverInput(false);
+                        if (!isFilePickerOpen) {
+                          console.log('[APP] ❌ Closing cover input after timeout');
+                          setShowCoverInput(false);
+                        } else {
+                          console.log('[APP] ⏸️ File picker opened during timeout, not closing');
+                        }
                       }, 200);
                     }}
                   />
