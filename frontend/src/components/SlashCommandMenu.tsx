@@ -66,6 +66,7 @@ export const SlashCommandMenu: React.FC<SlashCommandMenuProps> = ({
   filter = '',
 }) => {
   const menuRef = useRef<HTMLDivElement>(null);
+  const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [selectedIndex, setSelectedIndex] = React.useState(0);
 
   const filteredItems = MENU_ITEMS.filter(
@@ -102,6 +103,16 @@ export const SlashCommandMenu: React.FC<SlashCommandMenuProps> = ({
     setSelectedIndex(0);
   }, [filter]);
 
+  // Scroll selected item into view
+  useEffect(() => {
+    if (itemRefs.current[selectedIndex]) {
+      itemRefs.current[selectedIndex]?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest',
+      });
+    }
+  }, [selectedIndex]);
+
   if (filteredItems.length === 0) {
     return null;
   }
@@ -119,6 +130,9 @@ export const SlashCommandMenu: React.FC<SlashCommandMenuProps> = ({
       {filteredItems.map((item, index) => (
         <div
           key={item.id}
+          ref={(el) => {
+            itemRefs.current[index] = el;
+          }}
           className={`slash-menu-item ${index === selectedIndex ? 'selected' : ''}`}
           onClick={(e) => {
             e.preventDefault();

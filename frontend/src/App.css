@@ -225,6 +225,16 @@ body {
 }
 
 /* Emoji picker */
+.emoji-picker-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 999;
+  background: transparent;
+}
+
 .emoji-picker {
   position: absolute;
   top: 100%;
@@ -504,9 +514,19 @@ body {
   pointer-events: auto;
 }
 
-.slash-menu-item:hover,
-.slash-menu-item.selected {
+.slash-menu-item:hover {
   background: rgba(55, 53, 47, 0.08);
+}
+
+.slash-menu-item.selected {
+  background: rgba(35, 131, 226, 0.1);
+  border-left: 3px solid rgba(35, 131, 226, 0.8);
+  padding-left: 5px;
+}
+
+.slash-menu-item.selected .slash-menu-label {
+  color: rgba(35, 131, 226, 0.9);
+  font-weight: 600;
 }
 
 .slash-menu-icon {
