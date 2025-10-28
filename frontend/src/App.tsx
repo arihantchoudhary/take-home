@@ -16,44 +16,45 @@ function App() {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [coverImage, setCoverImage] = useState<string | null>(null);
   const [showCoverInput, setShowCoverInput] = useState(false);
-
-  const handleCoverImageUpload = async (file: File) => {
-    console.log('[APP] 🖼️ COVER IMAGE UPLOAD - Starting');
-    console.log('[APP] 📁 File:', file.name, file.type, file.size);
-
-    try {
-      // Convert to base64
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const base64 = e.target?.result as string;
-        console.log('[APP] ✅ Image converted to base64');
-        console.log('[APP] 📏 Base64 length:', base64.length);
-        setCoverImage(base64);
-        console.log('[APP] 💾 Cover image state updated');
-      };
-      reader.onerror = (error) => {
-        console.error('[APP] ❌ Error reading file:', error);
-      };
-      reader.readAsDataURL(file);
-    } catch (err) {
-      console.error('[APP] ❌ Cover upload failed:', err);
-    }
-  };
-
-  const handleCoverUrlSubmit = (url: string) => {
-    console.log('[APP] 🖼️ COVER URL SUBMIT - Starting');
-    console.log('[APP] 🔗 URL:', url);
-
-    if (url) {
-      console.log('[APP] ✅ URL is valid, setting cover image');
-      setCoverImage(url);
-      setShowCoverInput(false);
-      console.log('[APP] 💾 Cover image state updated');
-    } else {
-      console.log('[APP] ⚠️ URL is empty, not setting cover');
-    }
-  };
   const [showHelp, setShowHelp] = useState(false);
+
+  // Unused for now - cover image upload handlers
+  // const handleCoverImageUpload = async (file: File) => {
+  //   console.log('[APP] 🖼️ COVER IMAGE UPLOAD - Starting');
+  //   console.log('[APP] 📁 File:', file.name, file.type, file.size);
+  //
+  //   try {
+  //     // Convert to base64
+  //     const reader = new FileReader();
+  //     reader.onload = (e) => {
+  //       const base64 = e.target?.result as string;
+  //       console.log('[APP] ✅ Image converted to base64');
+  //       console.log('[APP] 📏 Base64 length:', base64.length);
+  //       setCoverImage(base64);
+  //       console.log('[APP] 💾 Cover image state updated');
+  //     };
+  //     reader.onerror = (error) => {
+  //       console.error('[APP] ❌ Error reading file:', error);
+  //     };
+  //     reader.readAsDataURL(file);
+  //   } catch (err) {
+  //     console.error('[APP] ❌ Cover upload failed:', err);
+  //   }
+  // };
+  //
+  // const handleCoverUrlSubmit = (url: string) => {
+  //   console.log('[APP] 🖼️ COVER URL SUBMIT - Starting');
+  //   console.log('[APP] 🔗 URL:', url);
+  //
+  //   if (url) {
+  //     console.log('[APP] ✅ URL is valid, setting cover image');
+  //     setCoverImage(url);
+  //     setShowCoverInput(false);
+  //     console.log('[APP] 💾 Cover image state updated');
+  //   } else {
+  //     console.log('[APP] ⚠️ URL is empty, not setting cover');
+  //   }
+  // };
 
   useEffect(() => {
     loadBlocks();
