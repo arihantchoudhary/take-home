@@ -126,6 +126,14 @@ export const BlockRenderer: React.FC<BlockRendererProps> = ({ block, onDelete, o
               }
             }}
             onKeyDown={(e) => {
+              // When slash menu is open, let it handle arrow keys and Enter
+              if (showSlashMenu) {
+                if (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'Enter' || e.key === 'Escape') {
+                  // Let the SlashCommandMenu handle these keys
+                  return;
+                }
+              }
+
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
                 // Save current value before creating new block
@@ -134,9 +142,6 @@ export const BlockRenderer: React.FC<BlockRendererProps> = ({ block, onDelete, o
                   onUpdate(block.id, { value: newValue } as Partial<Block>);
                 }
                 // TODO: Create new block below
-              } else if (e.key === 'Escape' && showSlashMenu) {
-                e.preventDefault();
-                setShowSlashMenu(false);
               }
             }}
           >
