@@ -345,6 +345,120 @@ resource "aws_ecr_repository" "backend_api" {
   }
 }
 
+# IAM Role for CodeBuild
+resource "aws_iam_role" "codebuild_role" {
+  name = "${var.environment}-codebuild-backend-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "codebuild.amazonaws.com"
+        }
+      }
+    ]
+  })
+
+  tags = {
+    Name        = "CodeBuild Backend Role"
+    Environment = var.environment
+  }
+}
+
+# IAM Policy for CodeBuild
+resource "aws_iam_role_policy" "codebuild_policy" {
+  name = "${var.environment}-codebuild-backend-policy"
+  role = aws_iam_role.codebuild_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents"
+        ]
+        Resource = "arn:aws:logs:${var.aws_region}:*:log-group:/aws/codebuild/*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "ecr:GetAuthorizationToken",
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:BatchGetImage",
+          "ecr:PutImage",
+          "ecr:InitiateLayerUpload",
+          "ecr:UploadLayerPart",
+          "ecr:CompleteLayerUpload"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:PutObject"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+# CodeBuild Project
+resource "aws_codebuild_project" "backend_build" {
+  name          = "${var.environment}-notion-backend-build"
+  description   = "Build and push backend API Docker image"
+  build_timeout = "15"
+  service_role  = aws_iam_role.codebuild_role.arn
+
+  artifacts {
+    type = "NO_ARTIFACTS"
+  }
+
+  environment {
+    compute_type                = "BUILD_GENERAL1_SMALL"
+    image                       = "aws/codebuild/standard:7.0"
+    type                        = "LINUX_CONTAINER"
+    image_pull_credentials_type = "CODEBUILD"
+    privileged_mode             = true
+
+    environment_variable {
+      name  = "AWS_DEFAULT_REGION"
+      value = var.aws_region
+    }
+
+    environment_variable {
+      name  = "AWS_ACCOUNT_ID"
+      value = data.aws_caller_identity.current.account_id
+    }
+
+    environment_variable {
+      name  = "IMAGE_REPO_NAME"
+      value = aws_ecr_repository.backend_api.name
+    }
+  }
+
+  source {
+    type      = "NO_SOURCE"
+    buildspec = file("${path.module}/../backend/buildspec.yml")
+  }
+
+  tags = {
+    Name        = "Backend Build Project"
+    Environment = var.environment
+  }
+}
+
+# Data source to get AWS account ID
+data "aws_caller_identity" "current" {}
+
 # IAM Role for App Runner
 resource "aws_iam_role" "apprunner_service_role" {
   name = "${var.environment}-apprunner-service-role"
@@ -441,38 +555,81 @@ resource "aws_iam_role_policy_attachment" "apprunner_ecr_policy" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSAppRunnerServicePolicyForECRAccess"
 }
 
+# App Runner Auto Scaling Configuration
+resource "aws_apprunner_auto_scaling_configuration_version" "backend_api" {
+  auto_scaling_configuration_name = "${var.environment}-notion-backend-asg"
+
+  max_concurrency = 100
+  max_size        = 10
+  min_size        = 1
+
+  tags = {
+    Name        = "Backend API Auto Scaling"
+    Environment = var.environment
+  }
+}
+
+# App Runner Connection to GitHub (must be created manually via console first)
+# You'll need to create this connection in the AWS Console:
+# https://console.aws.amazon.com/apprunner/home#/create-connection
+# Then use: terraform import aws_apprunner_connection.github <connection-arn>
+
+resource "aws_apprunner_connection" "github" {
+  connection_name = "${var.environment}-github-connection"
+  provider_type   = "GITHUB"
+
+  tags = {
+    Name        = "GitHub Connection"
+    Environment = var.environment
+  }
+}
+
 # App Runner Service
 resource "aws_apprunner_service" "backend_api" {
   service_name = "${var.environment}-notion-backend-api"
 
   source_configuration {
     authentication_configuration {
-      access_role_arn = aws_iam_role.apprunner_ecr_role.arn
+      connection_arn = aws_apprunner_connection.github.arn
     }
 
-    image_repository {
-      image_configuration {
-        port = "3001"
-        runtime_environment_variables = {
-          NODE_ENV                     = var.environment
-          AWS_REGION                   = var.aws_region
-          BLOCKS_TABLE_NAME            = aws_dynamodb_table.blocks.name
-          PAGES_TABLE_NAME             = aws_dynamodb_table.pages.name
-          WORKSPACES_TABLE_NAME        = aws_dynamodb_table.workspaces.name
-          USERS_TABLE_NAME             = aws_dynamodb_table.users.name
-          WORKSPACE_MEMBERS_TABLE_NAME = aws_dynamodb_table.workspace_members.name
-          PAGE_SHARES_TABLE_NAME       = aws_dynamodb_table.page_shares.name
-          COMMENTS_TABLE_NAME          = aws_dynamodb_table.comments.name
-          NOTIFICATIONS_TABLE_NAME     = aws_dynamodb_table.notifications.name
-          FAVORITES_TABLE_NAME         = aws_dynamodb_table.favorites.name
-          TEMPLATES_TABLE_NAME         = aws_dynamodb_table.templates.name
+    code_repository {
+      repository_url = var.github_repo_url
+
+      code_configuration {
+        configuration_source = "API"
+
+        code_configuration_values {
+          runtime                       = "NODEJS_20"
+          build_command                 = "npm install && npm run build"
+          start_command                 = "npm start"
+          port                          = "3001"
+          runtime_environment_variables = {
+            NODE_ENV                     = var.environment
+            AWS_REGION                   = var.aws_region
+            BLOCKS_TABLE_NAME            = aws_dynamodb_table.blocks.name
+            PAGES_TABLE_NAME             = aws_dynamodb_table.pages.name
+            WORKSPACES_TABLE_NAME        = aws_dynamodb_table.workspaces.name
+            USERS_TABLE_NAME             = aws_dynamodb_table.users.name
+            WORKSPACE_MEMBERS_TABLE_NAME = aws_dynamodb_table.workspace_members.name
+            PAGE_SHARES_TABLE_NAME       = aws_dynamodb_table.page_shares.name
+            COMMENTS_TABLE_NAME          = aws_dynamodb_table.comments.name
+            NOTIFICATIONS_TABLE_NAME     = aws_dynamodb_table.notifications.name
+            FAVORITES_TABLE_NAME         = aws_dynamodb_table.favorites.name
+            TEMPLATES_TABLE_NAME         = aws_dynamodb_table.templates.name
+          }
         }
       }
-      image_identifier      = "${aws_ecr_repository.backend_api.repository_url}:latest"
-      image_repository_type = "ECR"
+
+      source_code_version {
+        type  = "BRANCH"
+        value = var.github_branch
+      }
+
+      source_directory = "/backend"
     }
 
-    auto_deployments_enabled = false
+    auto_deployments_enabled = true
   }
 
   instance_configuration {
@@ -490,13 +647,15 @@ resource "aws_apprunner_service" "backend_api" {
     unhealthy_threshold = 5
   }
 
+  auto_scaling_configuration_arn = aws_apprunner_auto_scaling_configuration_version.backend_api.arn
+
   tags = {
     Name        = "Notion Backend API"
     Environment = var.environment
   }
 
   depends_on = [
-    aws_iam_role_policy_attachment.apprunner_ecr_policy,
-    aws_iam_role_policy.apprunner_dynamodb_policy
+    aws_iam_role_policy.apprunner_dynamodb_policy,
+    aws_apprunner_connection.github
   ]
 }

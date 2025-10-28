@@ -9,3 +9,15 @@ variable "environment" {
   type        = string
   default     = "dev"
 }
+
+variable "github_repo_url" {
+  description = "GitHub repository URL"
+  type        = string
+  default     = "https://github.com/arihantchoudhary/take-home"
+}
+
+variable "github_branch" {
+  description = "GitHub branch to deploy from"
+  type        = string
+  default     = "main"
+}

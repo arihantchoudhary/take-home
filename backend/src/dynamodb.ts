@@ -250,12 +250,12 @@ export async function updateBlock(blockId: string, updates: Partial<types.Block>
   const block = await getBlock(blockId);
   if (!block) return null;
 
-  const updatedBlock = {
+  const updatedBlock: types.Block = {
     ...block,
     ...updates,
     blockId, // ensure ID doesn't change
     updatedAt: Date.now(),
-  };
+  } as types.Block;
 
   await docClient.send(new PutCommand({
     TableName: TABLES.BLOCKS,

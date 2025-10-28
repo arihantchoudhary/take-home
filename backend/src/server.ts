@@ -1,16 +1,7 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
-
-// Import routes
-import workspacesRouter from './routes/workspaces';
-import pagesRouter from './routes/pages';
-import blocksRouter from './routes/blocks';
-import usersRouter from './routes/users';
-import commentsRouter from './routes/comments';
-import notificationsRouter from './routes/notifications';
-import favoritesRouter from './routes/favorites';
-import searchRouter from './routes/search';
-import templatesRouter from './routes/templates';
+import * as db from './database';
+import { Block } from './types';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -25,16 +16,70 @@ app.use((req, res, next) => {
   next();
 });
 
-// API Routes
-app.use('/api/workspaces', workspacesRouter);
-app.use('/api/pages', pagesRouter);
-app.use('/api/blocks', blocksRouter);
-app.use('/api/users', usersRouter);
-app.use('/api/comments', commentsRouter);
-app.use('/api/notifications', notificationsRouter);
-app.use('/api/favorites', favoritesRouter);
-app.use('/api/search', searchRouter);
-app.use('/api/templates', templatesRouter);
+// GET /api/blocks - Get all blocks
+app.get('/api/blocks', async (req: Request, res: Response) => {
+  try {
+    const blocks = await db.getAllBlocks();
+    res.json(blocks);
+  } catch (error) {
+    console.error('Error fetching blocks:', error);
+    res.status(500).json({ error: 'Failed to fetch blocks' });
+  }
+});
+
+// GET /api/blocks/:id - Get a single block
+app.get('/api/blocks/:id', async (req: Request, res: Response) => {
+  try {
+    const block = await db.getBlockById(req.params.id);
+    if (!block) {
+      return res.status(404).json({ error: 'Block not found' });
+    }
+    res.json(block);
+  } catch (error) {
+    console.error('Error fetching block:', error);
+    res.status(500).json({ error: 'Failed to fetch block' });
+  }
+});
+
+// POST /api/blocks - Create a new block
+app.post('/api/blocks', async (req: Request, res: Response) => {
+  try {
+    const block: Block = req.body;
+    const newBlock = await db.addBlock(block);
+    res.status(201).json(newBlock);
+  } catch (error) {
+    console.error('Error creating block:', error);
+    res.status(500).json({ error: 'Failed to create block' });
+  }
+});
+
+// PUT /api/blocks/:id - Update a block
+app.put('/api/blocks/:id', async (req: Request, res: Response) => {
+  try {
+    const updatedBlock = await db.updateBlock(req.params.id, req.body);
+    if (!updatedBlock) {
+      return res.status(404).json({ error: 'Block not found' });
+    }
+    res.json(updatedBlock);
+  } catch (error) {
+    console.error('Error updating block:', error);
+    res.status(500).json({ error: 'Failed to update block' });
+  }
+});
+
+// DELETE /api/blocks/:id - Delete a block
+app.delete('/api/blocks/:id', async (req: Request, res: Response) => {
+  try {
+    const deleted = await db.deleteBlock(req.params.id);
+    if (!deleted) {
+      return res.status(404).json({ error: 'Block not found' });
+    }
+    res.status(204).send();
+  } catch (error) {
+    console.error('Error deleting block:', error);
+    res.status(500).json({ error: 'Failed to delete block' });
+  }
+});
 
 // Health check endpoint
 app.get('/health', (req: Request, res: Response) => {
@@ -48,47 +93,22 @@ app.get('/health', (req: Request, res: Response) => {
 // Root endpoint
 app.get('/', (req: Request, res: Response) => {
   res.json({
-    message: 'Notion Clone API',
+    message: 'Simple Notion Clone API',
     version: '1.0.0',
     endpoints: {
-      workspaces: '/api/workspaces',
-      pages: '/api/pages',
       blocks: '/api/blocks',
-      users: '/api/users',
-      comments: '/api/comments',
-      notifications: '/api/notifications',
-      favorites: '/api/favorites',
-      search: '/api/search',
-      templates: '/api/templates',
+      health: '/health'
     }
   });
 });
 
-// 404 handler
-app.use((req: Request, res: Response) => {
-  res.status(404).json({ error: 'Not found' });
-});
-
-// Error handler
-app.use((err: Error, req: Request, res: Response, next: Function) => {
-  console.error('Error:', err);
-  res.status(500).json({ error: 'Internal server error', message: err.message });
-});
-
+// Start server
 app.listen(PORT, () => {
-  console.log(`
-  ╔═══════════════════════════════════════════════════════╗
-  ║                                                       ║
-  ║   🚀 Notion Clone API Server                         ║
-  ║                                                       ║
-  ║   Server: http://localhost:${PORT}                      ║
-  ║   Health: http://localhost:${PORT}/health               ║
-  ║                                                       ║
-  ║   Environment: ${process.env.NODE_ENV || 'development'}                        ║
-  ║   AWS Region: ${process.env.AWS_REGION || 'us-east-1'}                        ║
-  ║                                                       ║
-  ╚═══════════════════════════════════════════════════════╝
-  `);
+  console.log('\n' + '='.repeat(55));
+  console.log('🚀 Simple Notion Clone API Server');
+  console.log('='.repeat(55));
+  console.log(`Server: http://localhost:${PORT}`);
+  console.log(`Health: http://localhost:${PORT}/health`);
+  console.log(`Blocks: http://localhost:${PORT}/api/blocks`);
+  console.log('='.repeat(55) + '\n');
 });
-
-export default app;
