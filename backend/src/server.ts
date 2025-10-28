@@ -3,7 +3,7 @@ import cors from 'cors';
 
 // Import routes
 import blocksRouter from './routes/blocks-simple';
-import imagesRouter from './routes/images';
+// import imagesRouter from './routes/images'; // Disabled for Render deployment (no S3)
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -20,7 +20,7 @@ app.use((req, res, next) => {
 
 // API Routes
 app.use('/api/blocks', blocksRouter);
-app.use('/api/images', imagesRouter);
+// app.use('/api/images', imagesRouter); // Disabled for Render deployment (no S3)
 
 // Health check endpoint
 app.get('/health', async (req: Request, res: Response) => {
@@ -28,13 +28,7 @@ app.get('/health', async (req: Request, res: Response) => {
     status: 'ok',
     timestamp: new Date().toISOString(),
     service: 'notion-clone-api',
-    database: 'dynamodb',
-    region: process.env.AWS_REGION || 'us-east-1',
-    tables: {
-      blocks: process.env.BLOCKS_TABLE || 'dev-notion-blocks',
-      pages: process.env.PAGES_TABLE || 'dev-notion-pages',
-      workspaces: process.env.WORKSPACES_TABLE || 'dev-notion-workspaces'
-    }
+    database: 'file-based'
   });
 });
 
@@ -45,7 +39,6 @@ app.get('/', (req: Request, res: Response) => {
     version: '1.0.0',
     endpoints: {
       blocks: '/api/blocks',
-      images: '/api/images',
       health: '/health'
     }
   });
