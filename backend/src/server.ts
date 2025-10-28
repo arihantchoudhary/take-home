@@ -26,7 +26,13 @@ app.get('/health', async (req: Request, res: Response) => {
     status: 'ok',
     timestamp: new Date().toISOString(),
     service: 'notion-clone-api',
-    database: 'file-based'
+    database: 'dynamodb',
+    region: process.env.AWS_REGION || 'us-east-1',
+    tables: {
+      blocks: process.env.BLOCKS_TABLE || 'dev-notion-blocks',
+      pages: process.env.PAGES_TABLE || 'dev-notion-pages',
+      workspaces: process.env.WORKSPACES_TABLE || 'dev-notion-workspaces'
+    }
   });
 });
 

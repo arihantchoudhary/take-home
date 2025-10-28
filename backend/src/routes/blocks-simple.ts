@@ -1,41 +1,26 @@
 import { Router, Request, Response } from 'express';
-import fs from 'fs/promises';
-import path from 'path';
+import * as dynamodb from '../dynamodb';
+import { Block } from '../types';
 
 const router = Router();
-const BLOCKS_FILE = path.join(__dirname, '../../data/blocks.json');
 
-// Ensure data directory exists
-async function ensureDataDir() {
-  const dir = path.dirname(BLOCKS_FILE);
-  await fs.mkdir(dir, { recursive: true });
-}
-
-// Read blocks from file
-async function readBlocks() {
-  try {
-    await ensureDataDir();
-    const data = await fs.readFile(BLOCKS_FILE, 'utf-8');
-    const parsed = JSON.parse(data);
-    // Return array directly, or empty array if not an array
-    return Array.isArray(parsed) ? parsed : [];
-  } catch (error) {
-    // If file doesn't exist, return empty array
-    return [];
-  }
-}
-
-// Write blocks to file
-async function writeBlocks(blocks: any[]) {
-  await ensureDataDir();
-  await fs.writeFile(BLOCKS_FILE, JSON.stringify(blocks, null, 2));
-}
-
-// GET /api/blocks - Get all blocks
+// GET /api/blocks?pageId=xxx - Get blocks for a page
 router.get('/', async (req: Request, res: Response) => {
   try {
-    const blocks = await readBlocks();
-    res.json(blocks);
+    const { pageId } = req.query;
+
+    // If no pageId provided, use a default page
+    const targetPageId = (pageId as string) || 'default-page';
+
+    const blocks = await dynamodb.getPageBlocks(targetPageId);
+
+    // Transform to match frontend expectations (blockId -> id)
+    const response = blocks.map(block => ({
+      ...block,
+      id: block.blockId,
+    }));
+
+    res.json(response);
   } catch (error) {
     console.error('Error fetching blocks:', error);
     res.status(500).json({ error: 'Failed to fetch blocks' });
@@ -45,17 +30,33 @@ router.get('/', async (req: Request, res: Response) => {
 // POST /api/blocks - Create a new block
 router.post('/', async (req: Request, res: Response) => {
   try {
-    const newBlock = req.body;
+    const incomingData = req.body;
 
-    if (!newBlock.type) {
+    if (!incomingData.type) {
       return res.status(400).json({ error: 'Missing required field: type' });
     }
 
-    const blocks = await readBlocks();
-    blocks.push(newBlock);
-    await writeBlocks(blocks);
+    // Prepare block data for DynamoDB
+    const blockData: Partial<Block> = {
+      type: incomingData.type,
+      pageId: incomingData.pageId || 'default-page',
+      order: incomingData.order || 0,
+      ...incomingData
+    };
 
-    res.status(201).json(newBlock);
+    // Remove frontend 'id' field if present
+    delete (blockData as any).id;
+
+    const userId = incomingData.userId || 'anonymous';
+    const block = await dynamodb.createBlock(blockData, userId);
+
+    // Transform response to match frontend expectations
+    const response = {
+      ...block,
+      id: block.blockId,
+    };
+
+    res.status(201).json(response);
   } catch (error) {
     console.error('Error creating block:', error);
     res.status(500).json({ error: 'Failed to create block' });
@@ -65,20 +66,25 @@ router.post('/', async (req: Request, res: Response) => {
 // PUT /api/blocks/:id - Update a block
 router.put('/:id', async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
-    const updates = req.body;
+    const blockId = req.params.id;
+    const { userId = 'anonymous', ...updates } = req.body;
 
-    const blocks = await readBlocks();
-    const index = blocks.findIndex((b: any) => b.id === id);
+    // Remove 'id' from updates if present
+    delete (updates as any).id;
 
-    if (index === -1) {
+    const block = await dynamodb.updateBlock(blockId, updates, userId);
+
+    if (!block) {
       return res.status(404).json({ error: 'Block not found' });
     }
 
-    blocks[index] = { ...blocks[index], ...updates, id };
-    await writeBlocks(blocks);
+    // Transform response
+    const response = {
+      ...block,
+      id: block.blockId,
+    };
 
-    res.json(blocks[index]);
+    res.json(response);
   } catch (error) {
     console.error('Error updating block:', error);
     res.status(500).json({ error: 'Failed to update block' });
@@ -88,16 +94,14 @@ router.put('/:id', async (req: Request, res: Response) => {
 // DELETE /api/blocks/:id - Delete a block
 router.delete('/:id', async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const blockId = req.params.id;
 
-    const blocks = await readBlocks();
-    const filteredBlocks = blocks.filter((b: any) => b.id !== id);
+    const deleted = await dynamodb.deleteBlock(blockId);
 
-    if (filteredBlocks.length === blocks.length) {
+    if (!deleted) {
       return res.status(404).json({ error: 'Block not found' });
     }
 
-    await writeBlocks(filteredBlocks);
     res.status(204).send();
   } catch (error) {
     console.error('Error deleting block:', error);
