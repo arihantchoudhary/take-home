@@ -23,12 +23,21 @@ function App() {
     // For now, we'll use a simple file-to-data-URL approach
     // In production, you'd upload to S3 and get back a URL
     const reader = new FileReader();
-    reader.onloadend = () => {
+    reader.onloadend = async () => {
       console.log('[APP] ✅ File converted to data URL');
       console.log('[APP] 💾 Setting cover image');
-      setCoverImage(reader.result as string);
+      const imageUrl = reader.result as string;
+      setCoverImage(imageUrl);
       setShowCoverInput(false);
       console.log('[APP] ✅ Cover image set!');
+
+      // Persist to backend
+      try {
+        await api.updatePageMetadata({ coverImage: imageUrl });
+        console.log('[APP] ✅ Cover image persisted to backend');
+      } catch (err) {
+        console.error('[APP] ❌ Error persisting cover image:', err);
+      }
     };
     reader.onerror = () => {
       console.error('[APP] ❌ Error reading file');
@@ -36,13 +45,21 @@ function App() {
     reader.readAsDataURL(file);
   };
 
-  const handleCoverUrlSubmit = (url: string) => {
+  const handleCoverUrlSubmit = async (url: string) => {
     console.log('[APP] 🔗 URL submitted:', url);
     if (url) {
       console.log('[APP] ✅ Valid URL, setting cover image');
       setCoverImage(url);
       setShowCoverInput(false);
       console.log('[APP] ✅ Cover image set!');
+
+      // Persist to backend
+      try {
+        await api.updatePageMetadata({ coverImage: url });
+        console.log('[APP] ✅ Cover image URL persisted to backend');
+      } catch (err) {
+        console.error('[APP] ❌ Error persisting cover image URL:', err);
+      }
     } else {
       console.log('[APP] ⚠️ Empty URL, not setting cover');
     }
@@ -50,7 +67,20 @@ function App() {
 
   useEffect(() => {
     loadBlocks();
+    loadPageMetadata();
   }, []);
+
+  const loadPageMetadata = async () => {
+    try {
+      const metadata = await api.fetchPageMetadata();
+      setPageTitle(metadata.title);
+      setPageIcon(metadata.icon);
+      setCoverImage(metadata.coverImage);
+    } catch (err) {
+      console.error('[APP] ❌ Error loading page metadata:', err);
+      // Use default values on error
+    }
+  };
 
   const loadBlocks = async () => {
 
@@ -222,7 +252,16 @@ function App() {
               <img src={coverImage} alt="Cover" className="cover-image" />
               <button
                 className="remove-cover-btn"
-                onClick={() => setCoverImage(null)}
+                onClick={async () => {
+                  setCoverImage(null);
+                  // Persist to backend
+                  try {
+                    await api.updatePageMetadata({ coverImage: null });
+                    console.log('[APP] ✅ Cover removed and persisted');
+                  } catch (err) {
+                    console.error('[APP] ❌ Error persisting cover removal:', err);
+                  }
+                }}
                 title="Remove cover"
               >
                 × Remove cover
@@ -263,6 +302,11 @@ function App() {
                   <label
                     htmlFor="cover-file-input"
                     className="cover-upload-btn"
+                    onMouseDown={(e) => {
+                      console.log('[APP] 🖱️ Upload button mousedown - preventing blur');
+                      // Prevent the URL input from blurring and closing the container
+                      e.preventDefault();
+                    }}
                     onClick={() => {
                       console.log('[APP] 🖱️ Upload Image button clicked - file picker should open');
                     }}
@@ -291,18 +335,33 @@ function App() {
                     onBlur={(e) => {
                       console.log('[APP] 👋 Cover input blurred');
                       console.log('[APP] 🎯 Related target:', e.relatedTarget);
-                      // Don't close if clicking on the file upload label
+
+                      // Don't close if clicking on the file upload label or within the container
                       const relatedTarget = e.relatedTarget as HTMLElement;
-                      const isLabel = relatedTarget instanceof HTMLLabelElement;
-                      if (relatedTarget?.id === 'cover-file-input' || (isLabel && (relatedTarget as HTMLLabelElement).htmlFor === 'cover-file-input')) {
-                        console.log('[APP] ⏭️ Clicked on upload button, keeping input open');
-                        return;
+
+                      // Check if the related target is the label for file upload
+                      if (relatedTarget) {
+                        console.log('[APP] 🔍 Related target class:', relatedTarget.className);
+                        console.log('[APP] 🔍 Related target tag:', relatedTarget.tagName);
+
+                        if (relatedTarget.className?.includes('cover-upload-btn')) {
+                          console.log('[APP] ⏭️ Clicked on upload button, keeping input open');
+                          return;
+                        }
                       }
+
+                      // If no related target (clicking on label), don't close immediately
+                      // Give time for the file picker to open
                       console.log('[APP] 🕐 Setting timeout to close input');
                       setTimeout(() => {
-                        console.log('[APP] ❌ Closing cover input');
-                        setShowCoverInput(false);
-                      }, 150);
+                        // Only close if no cover image was set
+                        if (!coverImage) {
+                          console.log('[APP] ❌ Closing cover input - no cover image');
+                          setShowCoverInput(false);
+                        } else {
+                          console.log('[APP] ✅ Cover image set, not closing input');
+                        }
+                      }, 200);
                     }}
                   />
                   <div className="cover-input-hint">
@@ -317,53 +376,91 @@ function App() {
           <div className="page-header">
             <div
               className="page-icon"
-              onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+              onClick={(e) => {
+                console.log('[APP] 🎨 Page icon clicked');
+                e.stopPropagation();
+                setShowEmojiPicker(!showEmojiPicker);
+                console.log('[APP] 📌 Emoji picker toggled:', !showEmojiPicker);
+              }}
               title="Change icon"
             >
               {pageIcon}
             </div>
             {showEmojiPicker && (
-              <div className="emoji-picker">
-                {[
-                  '📄', '📝', '📌', '📍', '📎', '📋', '📊', '📈', '📉', '🗂️',
-                  '📁', '📂', '🗃️', '📚', '📖', '📕', '📗', '📘', '📙', '📓',
-                  '📔', '📒', '📰', '🗞️', '💡', '🔥', '✨', '🎯', '🎨', '🎭',
-                  '🎪', '🎬', '🎮', '⚡', '🌟', '🚀', '🎉', '🎊', '🎁', '🏆',
-                  '🥇', '🥈', '🥉', '💎', '👑', '🎓', '💼', '🔬', '🔭', '🎪',
-                  '🎨', '🖼️', '🎭', '🎪', '🎬', '📷', '📹', '🎥', '📺', '📻',
-                  '🎙️', '🎚️', '🎛️', '⏱️', '⏰', '⏲️', '🕰️', '⌚', '📱', '💻',
-                  '⌨️', '🖥️', '🖨️', '🖱️', '🖲️', '🕹️', '💾', '💿', '📀', '🧮',
-                  '🎓', '📚', '📖', '📝', '✏️', '✒️', '🖊️', '🖋️', '📏', '📐',
-                  '🌍', '🌎', '🌏', '🗺️', '🧭', '⛰️', '🏔️', '🗻', '🏕️', '🏖️',
-                  '🏝️', '🏜️', '🏞️', '🏟️', '🏛️', '🏗️', '🏘️', '🏚️', '🏠', '🏡',
-                  '🍎', '🍊', '🍋', '🍌', '🍉', '🍇', '🍓', '🍈', '🍒', '🍑',
-                  '🥭', '🍍', '🥥', '🥝', '🍅', '🥑', '🥦', '🥬', '🥒', '🌶️',
-                  '🌽', '🥕', '🧄', '🧅', '🥔', '🍠', '🥐', '🥯', '🍞', '🥖',
-                  '🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯',
-                  '🦁', '🐮', '🐷', '🐸', '🐵', '🐔', '🐧', '🐦', '🐤', '🦆',
-                  '🦅', '🦉', '🦇', '🐺', '🐗', '🐴', '🦄', '🐝', '🐛', '🦋',
-                  '🐌', '🐞', '🐜', '🦟', '🦗', '🕷️', '🦂', '🐢', '🐍', '🦎',
-                  '🦖', '🦕', '🐙', '🦑', '🦐', '🦞', '🦀', '🐡', '🐠', '🐟',
-                  '🐬', '🐳', '🐋', '🦈', '🐊', '🐅', '🐆', '🦓', '🦍', '🦧'
-                ].map(emoji => (
-                  <button
-                    key={emoji}
-                    className="emoji-option"
-                    onClick={() => {
-                      setPageIcon(emoji);
-                      setShowEmojiPicker(false);
-                    }}
-                  >
-                    {emoji}
-                  </button>
-                ))}
-              </div>
+              <>
+                <div
+                  className="emoji-picker-backdrop"
+                  onClick={() => {
+                    console.log('[APP] 🖱️ Backdrop clicked, closing emoji picker');
+                    setShowEmojiPicker(false);
+                  }}
+                />
+                <div className="emoji-picker" onClick={(e) => {
+                  console.log('[APP] 🎯 Emoji picker clicked (stopping propagation)');
+                  e.stopPropagation();
+                }}>
+                  {[
+                    '📄', '📝', '📌', '📍', '📎', '📋', '📊', '📈', '📉', '🗂️',
+                    '📁', '📂', '🗃️', '📚', '📖', '📕', '📗', '📘', '📙', '📓',
+                    '📔', '📒', '📰', '🗞️', '💡', '🔥', '✨', '🎯', '🎨', '🎭',
+                    '🎪', '🎬', '🎮', '⚡', '🌟', '🚀', '🎉', '🎊', '🎁', '🏆',
+                    '🥇', '🥈', '🥉', '💎', '👑', '🎓', '💼', '🔬', '🔭', '🎪',
+                    '🎨', '🖼️', '🎭', '🎪', '🎬', '📷', '📹', '🎥', '📺', '📻',
+                    '🎙️', '🎚️', '🎛️', '⏱️', '⏰', '⏲️', '🕰️', '⌚', '📱', '💻',
+                    '⌨️', '🖥️', '🖨️', '🖱️', '🖲️', '🕹️', '💾', '💿', '📀', '🧮',
+                    '🎓', '📚', '📖', '📝', '✏️', '✒️', '🖊️', '🖋️', '📏', '📐',
+                    '🌍', '🌎', '🌏', '🗺️', '🧭', '⛰️', '🏔️', '🗻', '🏕️', '🏖️',
+                    '🏝️', '🏜️', '🏞️', '🏟️', '🏛️', '🏗️', '🏘️', '🏚️', '🏠', '🏡',
+                    '🍎', '🍊', '🍋', '🍌', '🍉', '🍇', '🍓', '🍈', '🍒', '🍑',
+                    '🥭', '🍍', '🥥', '🥝', '🍅', '🥑', '🥦', '🥬', '🥒', '🌶️',
+                    '🌽', '🥕', '🧄', '🧅', '🥔', '🍠', '🥐', '🥯', '🍞', '🥖',
+                    '🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯',
+                    '🦁', '🐮', '🐷', '🐸', '🐵', '🐔', '🐧', '🐦', '🐤', '🦆',
+                    '🦅', '🦉', '🦇', '🐺', '🐗', '🐴', '🦄', '🐝', '🐛', '🦋',
+                    '🐌', '🐞', '🐜', '🦟', '🦗', '🕷️', '🦂', '🐢', '🐍', '🦎',
+                    '🦖', '🦕', '🐙', '🦑', '🦐', '🦞', '🦀', '🐡', '🐠', '🐟',
+                    '🐬', '🐳', '🐋', '🦈', '🐊', '🐅', '🐆', '🦓', '🦍', '🦧'
+                  ].map(emoji => (
+                    <button
+                      key={emoji}
+                      className="emoji-option"
+                      onClick={(e) => {
+                        console.log('[APP] 😀 Emoji clicked:', emoji);
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log('[APP] 💾 Setting page icon to:', emoji);
+                        setPageIcon(emoji);
+                        console.log('[APP] ❌ Closing emoji picker');
+                        setShowEmojiPicker(false);
+                        console.log('[APP] ✅ Emoji picker closed, icon set to:', emoji);
+                      }}
+                      onMouseDown={(e) => {
+                        console.log('[APP] 🖱️ Emoji mousedown:', emoji);
+                        e.preventDefault();
+                      }}
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+              </>
             )}
             <h1
               className="page-title-large"
               contentEditable
               suppressContentEditableWarning
-              onBlur={(e) => setPageTitle(e.currentTarget.textContent || 'Untitled')}
+              onBlur={async (e) => {
+                const newTitle = e.currentTarget.textContent || 'Untitled';
+                setPageTitle(newTitle);
+
+                // Persist to backend
+                try {
+                  await api.updatePageMetadata({ title: newTitle });
+                  console.log('[APP] ✅ Page title persisted:', newTitle);
+                } catch (err) {
+                  console.error('[APP] ❌ Error persisting page title:', err);
+                }
+              }}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                   e.preventDefault();
