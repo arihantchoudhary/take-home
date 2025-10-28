@@ -19,20 +19,32 @@ function App() {
   const [showHelp, setShowHelp] = useState(false);
 
   const handleCoverImageUpload = async (file: File) => {
+    console.log('[APP] 📁 File selected:', file.name, file.type, file.size);
     // For now, we'll use a simple file-to-data-URL approach
     // In production, you'd upload to S3 and get back a URL
     const reader = new FileReader();
     reader.onloadend = () => {
+      console.log('[APP] ✅ File converted to data URL');
+      console.log('[APP] 💾 Setting cover image');
       setCoverImage(reader.result as string);
       setShowCoverInput(false);
+      console.log('[APP] ✅ Cover image set!');
+    };
+    reader.onerror = () => {
+      console.error('[APP] ❌ Error reading file');
     };
     reader.readAsDataURL(file);
   };
 
   const handleCoverUrlSubmit = (url: string) => {
+    console.log('[APP] 🔗 URL submitted:', url);
     if (url) {
+      console.log('[APP] ✅ Valid URL, setting cover image');
       setCoverImage(url);
       setShowCoverInput(false);
+      console.log('[APP] ✅ Cover image set!');
+    } else {
+      console.log('[APP] ⚠️ Empty URL, not setting cover');
     }
   };
 
@@ -239,14 +251,24 @@ function App() {
                     id="cover-file-input"
                     style={{ display: 'none' }}
                     onChange={(e) => {
+                      console.log('[APP] 📂 File input changed');
                       const file = e.target.files?.[0];
                       if (file) {
+                        console.log('[APP] 📁 File selected from input:', file.name);
                         handleCoverImageUpload(file);
                         setShowCoverInput(false);
                       }
                     }}
                   />
-                  <label htmlFor="cover-file-input" className="cover-upload-btn">
+                  <label
+                    htmlFor="cover-file-input"
+                    className="cover-upload-btn"
+                    onMouseDown={(e) => {
+                      console.log('[APP] 🖱️ Upload button mouse down - preventing default');
+                      // Prevent the URL input from losing focus
+                      e.preventDefault();
+                    }}
+                  >
                     📁 Upload Image
                   </label>
                   <span className="cover-input-divider">or</span>
@@ -256,18 +278,32 @@ function App() {
                     placeholder="Paste image URL..."
                     autoFocus
                     onKeyDown={(e) => {
+                      console.log('[APP] ⌨️ Key pressed in URL input:', e.key);
                       if (e.key === 'Enter') {
                         const url = e.currentTarget.value.trim();
+                        console.log('[APP] ↩️ Enter pressed with URL:', url);
                         handleCoverUrlSubmit(url);
                         e.currentTarget.value = '';
                       } else if (e.key === 'Escape') {
+                        console.log('[APP] ⎋ Escape pressed, closing input');
                         setShowCoverInput(false);
                         e.currentTarget.value = '';
                       }
                     }}
-                    onBlur={() => {
+                    onBlur={(e) => {
                       console.log('[APP] 👋 Cover input blurred');
-                      setTimeout(() => setShowCoverInput(false), 200);
+                      console.log('[APP] 🎯 Related target:', e.relatedTarget);
+                      // Don't close if clicking on the file upload label
+                      const relatedTarget = e.relatedTarget as HTMLElement;
+                      if (relatedTarget?.id === 'cover-file-input' || relatedTarget?.htmlFor === 'cover-file-input') {
+                        console.log('[APP] ⏭️ Clicked on upload button, keeping input open');
+                        return;
+                      }
+                      console.log('[APP] 🕐 Setting timeout to close input');
+                      setTimeout(() => {
+                        console.log('[APP] ❌ Closing cover input');
+                        setShowCoverInput(false);
+                      }, 150);
                     }}
                   />
                   <div className="cover-input-hint">
