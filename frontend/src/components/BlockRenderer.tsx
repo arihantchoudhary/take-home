@@ -5,10 +5,11 @@ import { SlashCommandMenu } from './SlashCommandMenu';
 interface BlockRendererProps {
   block: Block;
   onDelete: (id: string) => void;
+  onUpdate: (id: string, updates: Partial<Block>) => void;
   onConvert?: (block: Block, newType: 'text' | 'image', textType?: string) => void;
 }
 
-export const BlockRenderer: React.FC<BlockRendererProps> = ({ block, onDelete, onConvert }) => {
+export const BlockRenderer: React.FC<BlockRendererProps> = ({ block, onDelete, onUpdate, onConvert }) => {
   const [showSlashMenu, setShowSlashMenu] = useState(false);
   const [slashMenuPosition, setSlashMenuPosition] = useState({ top: 0, left: 0 });
   const [slashFilter, setSlashFilter] = useState('');
@@ -43,7 +44,6 @@ export const BlockRenderer: React.FC<BlockRendererProps> = ({ block, onDelete, o
 
       // Check if user typed '/'
       if (text.endsWith('/')) {
-        const rect = e.currentTarget.getBoundingClientRect();
         const selection = window.getSelection();
         if (selection && selection.rangeCount > 0) {
           const range = selection.getRangeAt(0);
@@ -109,9 +109,21 @@ export const BlockRenderer: React.FC<BlockRendererProps> = ({ block, onDelete, o
             contentEditable
             suppressContentEditableWarning
             onInput={handleInput}
+            onBlur={(e) => {
+              // Save changes when user clicks away or tabs out
+              const newValue = e.currentTarget.textContent || '';
+              if (newValue !== textBlock.value) {
+                onUpdate(block.id, { value: newValue } as Partial<Block>);
+              }
+            }}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
+                // Save current value before creating new block
+                const newValue = e.currentTarget.textContent || '';
+                if (newValue !== textBlock.value) {
+                  onUpdate(block.id, { value: newValue } as Partial<Block>);
+                }
                 // TODO: Create new block below
               } else if (e.key === 'Escape' && showSlashMenu) {
                 e.preventDefault();

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import type { Block } from './types';
 import { BlockRenderer } from './components/BlockRenderer';
 import * as api from './api';
@@ -78,11 +78,12 @@ function App() {
     try {
       if (newType === 'text' && textType) {
         const updatedBlock = {
-          ...block,
+          id: block.id,
           type: 'text' as const,
           textType: textType as any,
+          value: block.type === 'text' ? block.value : '',
         };
-        await api.updateBlock(block.id, updatedBlock);
+        await api.updateBlock(block.id, updatedBlock as Block);
         await loadBlocks();
       }
     } catch (err) {
