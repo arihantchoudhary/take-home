@@ -35,8 +35,11 @@ router.post('/', async (req: Request, res: Response) => {
   try {
     const incomingData = req.body;
 
+    console.log('Received POST /api/blocks:', JSON.stringify(incomingData, null, 2));
+
     if (!incomingData.type) {
-      return res.status(400).json({ error: 'Missing required field: type' });
+      console.error('Missing type field. Received:', incomingData);
+      return res.status(400).json({ error: 'Missing required field: type', received: incomingData });
     }
 
     // Transform frontend schema to backend schema
@@ -73,13 +76,19 @@ router.post('/', async (req: Request, res: Response) => {
 router.get('/:blockId', async (req: Request, res: Response) => {
   try {
     const { blockId } = req.params;
-    const block = await db.getBlock(blockId);
+    const block = await db.getBlockById(blockId);
 
     if (!block) {
       return res.status(404).json({ error: 'Block not found' });
     }
 
-    res.json(block);
+    // Transform to frontend schema
+    const response = {
+      ...block,
+      id: block.blockId,
+    };
+
+    res.json(response);
   } catch (error) {
     console.error('Error fetching block:', error);
     res.status(500).json({ error: 'Failed to fetch block' });
@@ -90,15 +99,24 @@ router.get('/:blockId', async (req: Request, res: Response) => {
 router.put('/:blockId', async (req: Request, res: Response) => {
   try {
     const { blockId } = req.params;
-    const { userId = 'default-user', ...updates } = req.body;
+    const updates = req.body;
 
-    const block = await db.updateBlock(blockId, updates, userId);
+    // Remove 'id' from updates if present (use blockId instead)
+    delete (updates as any).id;
+
+    const block = await db.updateBlock(blockId, updates);
 
     if (!block) {
       return res.status(404).json({ error: 'Block not found' });
     }
 
-    res.json(block);
+    // Transform to frontend schema
+    const response = {
+      ...block,
+      id: block.blockId,
+    };
+
+    res.json(response);
   } catch (error) {
     console.error('Error updating block:', error);
     res.status(500).json({ error: 'Failed to update block' });
@@ -119,18 +137,6 @@ router.delete('/:blockId', async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Error deleting block:', error);
     res.status(500).json({ error: 'Failed to delete block' });
-  }
-});
-
-// GET /api/blocks/:blockId/comments - Get block comments
-router.get('/:blockId/comments', async (req: Request, res: Response) => {
-  try {
-    const { blockId } = req.params;
-    const comments = await db.getBlockComments(blockId);
-    res.json(comments);
-  } catch (error) {
-    console.error('Error fetching block comments:', error);
-    res.status(500).json({ error: 'Failed to fetch block comments' });
   }
 });
 
