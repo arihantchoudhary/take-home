@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import type { Block, TextBlock, ImageBlock } from '../types';
 import { SlashCommandMenu } from './SlashCommandMenu';
+import { BlockEditor } from './BlockEditor';
 
 interface BlockRendererProps {
   block: Block;
@@ -13,6 +14,7 @@ export const BlockRenderer: React.FC<BlockRendererProps> = ({ block, onDelete, o
   const [showSlashMenu, setShowSlashMenu] = useState(false);
   const [slashMenuPosition, setSlashMenuPosition] = useState({ top: 0, left: 0 });
   const [slashFilter, setSlashFilter] = useState('');
+  const [showEditor, setShowEditor] = useState(false);
   const textRef = useRef<HTMLElement>(null);
 
   // Auto-focus empty blocks
@@ -148,34 +150,59 @@ export const BlockRenderer: React.FC<BlockRendererProps> = ({ block, onDelete, o
 
   if (block.type === 'image') {
     const imageBlock = block as ImageBlock;
+
+    const handleSaveEdit = (updatedBlock: Block) => {
+      onUpdate(block.id, updatedBlock);
+      setShowEditor(false);
+    };
+
     return (
-      <div className="block-wrapper">
-        <div className="block-actions">
-          <button className="block-drag-handle" title="Drag">⋮⋮</button>
-          <button
-            className="block-delete-btn"
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete(block.id);
-            }}
-            title="Delete"
-          >
-            ×
-          </button>
+      <>
+        <div className="block-wrapper">
+          <div className="block-actions">
+            <button className="block-drag-handle" title="Drag">⋮⋮</button>
+            <button
+              className="block-edit-btn"
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowEditor(true);
+              }}
+              title="Edit"
+            >
+              ✎
+            </button>
+            <button
+              className="block-delete-btn"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(block.id);
+              }}
+              title="Delete"
+            >
+              ×
+            </button>
+          </div>
+          <div className="block-image-container">
+            <img
+              src={imageBlock.src}
+              alt="Block"
+              className="block-image"
+              style={{
+                width: `${imageBlock.width}px`,
+                height: `${imageBlock.height}px`,
+                objectFit: 'cover'
+              }}
+            />
+          </div>
         </div>
-        <div className="block-image-container">
-          <img
-            src={imageBlock.src}
-            alt="Block"
-            className="block-image"
-            style={{
-              width: `${imageBlock.width}px`,
-              height: `${imageBlock.height}px`,
-              objectFit: 'cover'
-            }}
+        {showEditor && (
+          <BlockEditor
+            block={block}
+            onSave={handleSaveEdit}
+            onCancel={() => setShowEditor(false)}
           />
-        </div>
-      </div>
+        )}
+      </>
     );
   }
 

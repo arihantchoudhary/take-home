@@ -4,7 +4,11 @@ import { BlockRenderer } from './components/BlockRenderer';
 import * as api from './api';
 import './App.css';
 
+console.log('[APP] 🚀 App Component Loaded');
+
 function App() {
+  console.log('[APP] 🔄 App Component Rendering');
+
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -13,37 +17,64 @@ function App() {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
   useEffect(() => {
+    console.log('[APP] 🎬 useEffect - Component mounted, loading blocks');
     loadBlocks();
   }, []);
 
   const loadBlocks = async () => {
+    console.log('[APP] 📚 LOAD BLOCKS - Function called');
+    console.log('[APP] ⏳ Setting loading = true');
+
     try {
       setLoading(true);
       setError(null);
+
+      console.log('[APP] 📡 Fetching blocks from API...');
       const fetchedBlocks = await api.fetchBlocks();
+
+      console.log('[APP] ✅ Blocks fetched successfully');
+      console.log('[APP] 📦 Fetched blocks:', fetchedBlocks);
+      console.log('[APP] 📊 Number of blocks:', fetchedBlocks.length);
+
       setBlocks(fetchedBlocks);
+      console.log('[APP] 💾 Blocks state updated');
 
       // If no blocks exist, create an empty one automatically
       if (fetchedBlocks.length === 0) {
+        console.log('[APP] 🆕 No blocks found, creating initial empty block');
+
         const emptyBlock = {
           id: `block-${Date.now()}`,
           type: 'text' as const,
           textType: 'paragraph' as const,
           value: '',
         };
+
+        console.log('[APP] 📝 Empty block created:', emptyBlock);
+
         try {
+          console.log('[APP] 📤 Sending empty block to API...');
           await api.createBlock(emptyBlock);
+
+          console.log('[APP] ✅ Empty block created successfully');
           setBlocks([emptyBlock]);
+          console.log('[APP] 💾 Blocks state updated with empty block');
         } catch (createErr) {
-          console.error('Error creating initial block:', createErr);
+          console.error('[APP] ❌ Error creating initial block:', createErr);
         }
       }
     } catch (err) {
+      console.error('[APP] ❌ LOAD BLOCKS FAILED');
+      console.error('[APP] 📄 Error details:', err);
+
       setError('Failed to load blocks');
-      console.error('Error loading blocks:', err);
+      console.log('[APP] 💥 Error state set');
     } finally {
+      console.log('[APP] ⏳ Setting loading = false');
       setLoading(false);
     }
+
+    console.log('[APP] ✅ LOAD BLOCKS - Function complete');
   };
 
   const handleAddBlockInline = async () => {
@@ -71,6 +102,20 @@ function App() {
     } catch (err) {
       alert('Failed to delete block');
       console.error('Error deleting block:', err);
+    }
+  };
+
+  const handleUpdateBlock = async (id: string, updates: Partial<Block>) => {
+    try {
+      const blockToUpdate = blocks.find(b => b.id === id);
+      if (!blockToUpdate) return;
+
+      const updatedBlock = { ...blockToUpdate, ...updates } as Block;
+      await api.updateBlock(id, updatedBlock);
+      await loadBlocks();
+    } catch (err) {
+      alert('Failed to update block');
+      console.error('Error updating block:', err);
     }
   };
 
@@ -184,6 +229,7 @@ function App() {
                 key={block.id}
                 block={block}
                 onDelete={handleDeleteBlock}
+                onUpdate={handleUpdateBlock}
                 onConvert={handleConvertBlock}
               />
             ))}
