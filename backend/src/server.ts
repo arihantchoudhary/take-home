@@ -1,6 +1,6 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
-import * as db from './database';
+import * as db from './dynamodb';
 import { Block } from './types';
 
 const app = express();
@@ -16,10 +16,10 @@ app.use((req, res, next) => {
   next();
 });
 
-// GET /api/blocks - Get all blocks
-app.get('/api/blocks', async (req: Request, res: Response) => {
+// GET /api/pages/:pageId/blocks - Get all blocks for a page
+app.get('/api/pages/:pageId/blocks', async (req: Request, res: Response) => {
   try {
-    const blocks = await db.getAllBlocks();
+    const blocks = await db.getPageBlocks(req.params.pageId);
     res.json(blocks);
   } catch (error) {
     console.error('Error fetching blocks:', error);
@@ -30,7 +30,7 @@ app.get('/api/blocks', async (req: Request, res: Response) => {
 // GET /api/blocks/:id - Get a single block
 app.get('/api/blocks/:id', async (req: Request, res: Response) => {
   try {
-    const block = await db.getBlockById(req.params.id);
+    const block = await db.getBlock(req.params.id);
     if (!block) {
       return res.status(404).json({ error: 'Block not found' });
     }
@@ -44,8 +44,8 @@ app.get('/api/blocks/:id', async (req: Request, res: Response) => {
 // POST /api/blocks - Create a new block
 app.post('/api/blocks', async (req: Request, res: Response) => {
   try {
-    const block: Block = req.body;
-    const newBlock = await db.addBlock(block);
+    const { userId = 'default-user', ...blockData } = req.body;
+    const newBlock = await db.createBlock(blockData, userId);
     res.status(201).json(newBlock);
   } catch (error) {
     console.error('Error creating block:', error);
@@ -56,7 +56,8 @@ app.post('/api/blocks', async (req: Request, res: Response) => {
 // PUT /api/blocks/:id - Update a block
 app.put('/api/blocks/:id', async (req: Request, res: Response) => {
   try {
-    const updatedBlock = await db.updateBlock(req.params.id, req.body);
+    const { userId = 'default-user', ...updates } = req.body;
+    const updatedBlock = await db.updateBlock(req.params.id, updates, userId);
     if (!updatedBlock) {
       return res.status(404).json({ error: 'Block not found' });
     }

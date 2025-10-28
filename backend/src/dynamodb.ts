@@ -367,16 +367,18 @@ export async function createComment(data: types.CreateCommentRequest, userId: st
   }));
 
   // Create notifications for mentions
-  for (const mentionedUserId of comment.mentions) {
-    await createNotification({
-      userId: mentionedUserId,
-      type: 'mention',
-      title: 'You were mentioned',
-      message: `You were mentioned in a comment`,
-      pageId: data.pageId,
-      commentId: comment.commentId,
-      relatedUserId: userId,
-    });
+  if (comment.mentions) {
+    for (const mentionedUserId of comment.mentions) {
+      await createNotification({
+        userId: mentionedUserId,
+        type: 'mention',
+        title: 'You were mentioned',
+        message: `You were mentioned in a comment`,
+        pageId: data.pageId,
+        commentId: comment.commentId,
+        relatedUserId: userId,
+      });
+    }
   }
 
   return comment;

@@ -1,59 +1,291 @@
-/* Notion-inspired minimal styling with Tailwind */
-
-/* Custom scrollbar - Apple style */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  @apply bg-muted-foreground/30 rounded;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  @apply bg-muted-foreground/50;
-}
-
-/* Smooth animations */
+/* Reset and base styles */
 * {
-  @apply transition-colors duration-150 ease-in-out;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
-/* Remove default focus outlines and add custom ones */
-*:focus-visible {
-  @apply outline-2 outline-ring outline-offset-2;
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: white;
+  color: #37352f;
 }
 
-/* Ensure text selection looks good */
-::selection {
-  @apply bg-primary/20;
+/* App container */
+.app {
+  min-height: 100vh;
+  background: white;
 }
 
-/* Typography improvements for Notion-like feel */
-h1, h2, h3 {
-  @apply font-bold tracking-tight;
+/* Top bar */
+.top-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 45px;
+  background: white;
+  border-bottom: 1px solid rgba(55, 53, 47, 0.09);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
 }
 
-/* Editable title styling */
-[contenteditable] {
-  @apply outline-none;
+.top-bar-content {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
 }
 
-[contenteditable]:focus {
-  @apply bg-muted/30;
+.page-title {
+  font-size: 14px;
+  color: rgba(55, 53, 47, 0.65);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-/* Loading spinner animation */
+/* Page container */
+.page-container {
+  padding-top: 45px;
+  min-height: 100vh;
+  background: white;
+}
+
+.page-content {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 96px 96px 30vh;
+}
+
+/* Page header */
+.page-header {
+  margin-bottom: 16px;
+}
+
+.page-icon {
+  font-size: 78px;
+  line-height: 1;
+  margin-bottom: 12px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.page-icon:hover {
+  opacity: 0.7;
+}
+
+.page-title-large {
+  font-size: 40px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: #37352f;
+  outline: none;
+  border: none;
+  padding: 3px 2px;
+  margin: 0;
+  width: 100%;
+  min-height: 50px;
+}
+
+.page-title-large:focus {
+  background: rgba(55, 53, 47, 0.03);
+}
+
+.page-title-large:empty:before {
+  content: 'Untitled';
+  color: rgba(55, 53, 47, 0.4);
+}
+
+/* Blocks list */
+.blocks-list {
+  position: relative;
+}
+
+/* Add block button */
+.add-block-container {
+  margin: 2px 0;
+}
+
+.add-block-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 2px;
+  background: none;
+  border: none;
+  color: rgba(55, 53, 47, 0.4);
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  width: 100%;
+  text-align: left;
+}
+
+.add-block-btn:hover {
+  background: rgba(55, 53, 47, 0.03);
+}
+
+.plus-icon {
+  font-size: 18px;
+  font-weight: 300;
+}
+
+.add-block-text {
+  font-size: 16px;
+  font-weight: 400;
+}
+
+/* Empty state */
+.empty-state {
+  padding: 40px 0;
+  text-align: center;
+}
+
+.empty-state-text {
+  color: rgba(55, 53, 47, 0.4);
+  font-size: 14px;
+}
+
+/* Loading */
+.loading-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  background: white;
+}
+
+.loading-spinner {
+  width: 24px;
+  height: 24px;
+  border: 2px solid rgba(55, 53, 47, 0.1);
+  border-top-color: rgba(55, 53, 47, 0.4);
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
 @keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
+  to { transform: rotate(360deg); }
 }
 
-.animate-spin {
-  animation: spin 1s linear infinite;
+/* Block wrapper */
+.block-wrapper {
+  position: relative;
+  padding: 3px 2px;
+  margin: 1px 0;
+  border-radius: 3px;
+  transition: background 0.12s ease-in-out;
+  cursor: pointer;
+}
+
+.block-wrapper:hover {
+  background: rgba(55, 53, 47, 0.03);
+}
+
+/* Block actions */
+.block-actions {
+  position: absolute;
+  left: -30px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  gap: 2px;
+}
+
+.block-drag-handle, .block-delete-btn {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: white;
+  border: 1px solid rgba(55, 53, 47, 0.16);
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 12px;
+  color: rgba(55, 53, 47, 0.45);
+  transition: all 0.12s ease;
+}
+
+.block-drag-handle:hover, .block-delete-btn:hover {
+  background: rgba(55, 53, 47, 0.06);
+}
+
+/* Text styles */
+.block-h1 {
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: #37352f;
+  margin: 2px 0;
+  padding: 3px 2px;
+}
+
+.block-h2 {
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.3;
+  color: #37352f;
+  margin: 2px 0;
+  padding: 3px 2px;
+}
+
+.block-h3 {
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.4;
+  color: #37352f;
+  margin: 2px 0;
+  padding: 3px 2px;
+}
+
+.block-paragraph {
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.5;
+  color: #37352f;
+  margin: 2px 0;
+  padding: 3px 2px;
+}
+
+.block-paragraph:empty:before {
+  content: 'Type something...';
+  color: rgba(55, 53, 47, 0.3);
+}
+
+/* Image block */
+.block-image-container {
+  margin: 4px 0;
+  padding: 3px 2px;
+}
+
+.block-image {
+  max-width: 100%;
+  border-radius: 3px;
+  display: block;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .page-content {
+    padding: 64px 24px 30vh;
+  }
+
+  .page-title-large {
+    font-size: 32px;
+  }
+
+  .page-icon {
+    font-size: 64px;
+  }
+
+  .block-actions {
+    left: -24px;
+  }
 }
