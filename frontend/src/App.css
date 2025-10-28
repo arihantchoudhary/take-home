@@ -1,44 +1,59 @@
-.app {
-  min-height: 100vh;
-  background-color: #f9f9f9;
+/* Notion-inspired minimal styling with Tailwind */
+
+/* Custom scrollbar - Apple style */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
 }
 
-.blocks-container {
-  padding: 20px 0;
+::-webkit-scrollbar-track {
+  background: transparent;
 }
 
-.block-wrapper {
-  background-color: white;
-  border: 1px solid #e0e0e0;
-  border-radius: 4px;
-  transition: box-shadow 0.2s;
+::-webkit-scrollbar-thumb {
+  @apply bg-muted-foreground/30 rounded;
 }
 
-.block-wrapper:hover {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-muted-foreground/50;
 }
 
-h1, h2, h3, p {
-  margin: 0;
-  padding: 12px 16px;
+/* Smooth animations */
+* {
+  @apply transition-colors duration-150 ease-in-out;
 }
 
-h1 {
-  font-size: 32px;
-  font-weight: bold;
+/* Remove default focus outlines and add custom ones */
+*:focus-visible {
+  @apply outline-2 outline-ring outline-offset-2;
 }
 
-h2 {
-  font-size: 24px;
-  font-weight: bold;
+/* Ensure text selection looks good */
+::selection {
+  @apply bg-primary/20;
 }
 
-h3 {
-  font-size: 20px;
-  font-weight: bold;
+/* Typography improvements for Notion-like feel */
+h1, h2, h3 {
+  @apply font-bold tracking-tight;
 }
 
-p {
-  font-size: 16px;
-  line-height: 1.6;
+/* Editable title styling */
+[contenteditable] {
+  @apply outline-none;
+}
+
+[contenteditable]:focus {
+  @apply bg-muted/30;
+}
+
+/* Loading spinner animation */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
 }

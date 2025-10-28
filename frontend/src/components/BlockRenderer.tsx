@@ -8,58 +8,41 @@ interface BlockRendererProps {
 }
 
 export const BlockRenderer: React.FC<BlockRendererProps> = ({ block, onEdit, onDelete }) => {
-  const handleClick = () => {
-    onEdit(block);
-  };
-
   if (block.type === 'text') {
     const textBlock = block as TextBlock;
-    const style: React.CSSProperties = {
-      cursor: 'pointer',
-      padding: '8px',
-      margin: '4px 0',
-      borderRadius: '4px',
-      transition: 'background-color 0.2s',
+
+    const getClassName = () => {
+      switch (textBlock.textType) {
+        case 'h1': return 'block-h1';
+        case 'h2': return 'block-h2';
+        case 'h3': return 'block-h3';
+        case 'paragraph': return 'block-paragraph';
+        default: return 'block-paragraph';
+      }
     };
 
-    const textElement = (() => {
-      switch (textBlock.textType) {
-        case 'h1':
-          return <h1 style={style} onClick={handleClick}>{textBlock.value || 'Empty H1'}</h1>;
-        case 'h2':
-          return <h2 style={style} onClick={handleClick}>{textBlock.value || 'Empty H2'}</h2>;
-        case 'h3':
-          return <h3 style={style} onClick={handleClick}>{textBlock.value || 'Empty H3'}</h3>;
-        case 'paragraph':
-          return <p style={style} onClick={handleClick}>{textBlock.value || 'Empty paragraph'}</p>;
-        default:
-          return <p style={style} onClick={handleClick}>{textBlock.value}</p>;
-      }
-    })();
+    const Tag = textBlock.textType === 'h1' ? 'h1' :
+                textBlock.textType === 'h2' ? 'h2' :
+                textBlock.textType === 'h3' ? 'h3' : 'p';
 
     return (
-      <div className="block-wrapper" style={{ position: 'relative', marginBottom: '8px' }}>
-        {textElement}
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete(block.id);
-          }}
-          style={{
-            position: 'absolute',
-            right: '8px',
-            top: '8px',
-            padding: '4px 8px',
-            background: '#ff4444',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            fontSize: '12px',
-          }}
-        >
-          Delete
-        </button>
+      <div className="block-wrapper" onClick={() => onEdit(block)}>
+        <div className="block-actions">
+          <button className="block-drag-handle" title="Drag">⋮⋮</button>
+          <button
+            className="block-delete-btn"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(block.id);
+            }}
+            title="Delete"
+          >
+            ×
+          </button>
+        </div>
+        <Tag className={getClassName()}>
+          {textBlock.value || 'Empty'}
+        </Tag>
       </div>
     );
   }
@@ -67,39 +50,32 @@ export const BlockRenderer: React.FC<BlockRendererProps> = ({ block, onEdit, onD
   if (block.type === 'image') {
     const imageBlock = block as ImageBlock;
     return (
-      <div className="block-wrapper" style={{ position: 'relative', marginBottom: '16px' }}>
-        <img
-          src={imageBlock.src}
-          alt="Block image"
-          style={{
-            width: `${imageBlock.width}px`,
-            height: `${imageBlock.height}px`,
-            cursor: 'pointer',
-            border: '1px solid #ddd',
-            borderRadius: '4px',
-          }}
-          onClick={handleClick}
-        />
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete(block.id);
-          }}
-          style={{
-            position: 'absolute',
-            right: '8px',
-            top: '8px',
-            padding: '4px 8px',
-            background: '#ff4444',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            fontSize: '12px',
-          }}
-        >
-          Delete
-        </button>
+      <div className="block-wrapper" onClick={() => onEdit(block)}>
+        <div className="block-actions">
+          <button className="block-drag-handle" title="Drag">⋮⋮</button>
+          <button
+            className="block-delete-btn"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(block.id);
+            }}
+            title="Delete"
+          >
+            ×
+          </button>
+        </div>
+        <div className="block-image-container">
+          <img
+            src={imageBlock.src}
+            alt="Block"
+            className="block-image"
+            style={{
+              width: `${imageBlock.width}px`,
+              height: `${imageBlock.height}px`,
+              objectFit: 'cover'
+            }}
+          />
+        </div>
       </div>
     );
   }
