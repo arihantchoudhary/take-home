@@ -23,6 +23,22 @@ function App() {
       setError(null);
       const fetchedBlocks = await api.fetchBlocks();
       setBlocks(fetchedBlocks);
+
+      // If no blocks exist, create an empty one automatically
+      if (fetchedBlocks.length === 0) {
+        const emptyBlock = {
+          id: `block-${Date.now()}`,
+          type: 'text' as const,
+          textType: 'paragraph' as const,
+          value: '',
+        };
+        try {
+          await api.createBlock(emptyBlock);
+          setBlocks([emptyBlock]);
+        } catch (createErr) {
+          console.error('Error creating initial block:', createErr);
+        }
+      }
     } catch (err) {
       setError('Failed to load blocks');
       console.error('Error loading blocks:', err);

@@ -16,6 +16,13 @@ export const BlockRenderer: React.FC<BlockRendererProps> = ({ block, onEdit, onD
   const [slashFilter, setSlashFilter] = useState('');
   const textRef = useRef<HTMLElement>(null);
 
+  // Auto-focus empty blocks
+  useEffect(() => {
+    if (block.type === 'text' && !block.value && textRef.current) {
+      textRef.current.focus();
+    }
+  }, []);
+
   if (block.type === 'text') {
     const textBlock = block as TextBlock;
 
