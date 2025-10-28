@@ -9,7 +9,9 @@ async function initializeDataFile(): Promise<void> {
   try {
     await fs.access(DATA_FILE);
   } catch {
-    // File doesn't exist, create it with empty blocks array
+    // File doesn't exist, create directory and file with empty blocks array
+    const dataDir = path.dirname(DATA_FILE);
+    await fs.mkdir(dataDir, { recursive: true });
     const initialData: BlocksData = { blocks: [] };
     await fs.writeFile(DATA_FILE, JSON.stringify(initialData, null, 2));
   }
@@ -25,6 +27,8 @@ export async function getAllBlocks(): Promise<Block[]> {
 
 // Save all blocks
 export async function saveBlocks(blocks: Block[]): Promise<void> {
+  const dataDir = path.dirname(DATA_FILE);
+  await fs.mkdir(dataDir, { recursive: true });
   const blocksData: BlocksData = { blocks };
   await fs.writeFile(DATA_FILE, JSON.stringify(blocksData, null, 2));
 }
