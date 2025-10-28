@@ -49,14 +49,16 @@ router.post('/upload-url', async (req: Request, res: Response) => {
   }
 });
 
-// DELETE /api/images/:key - Delete an image
-router.delete('/:key(*)', async (req: Request, res: Response) => {
+// DELETE /api/images/images/:filename - Delete an image
+router.delete('/images/:filename', async (req: Request, res: Response) => {
   try {
-    const key = req.params.key;
+    const filename = req.params.filename;
 
-    if (!key) {
-      return res.status(400).json({ error: 'Image key is required' });
+    if (!filename) {
+      return res.status(400).json({ error: 'Image filename is required' });
     }
+
+    const key = `images/${filename}`;
 
     const command = new DeleteObjectCommand({
       Bucket: BUCKET_NAME,
