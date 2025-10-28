@@ -11,4 +11,18 @@ services:
         value: 3001
       - key: AWS_REGION
         value: us-east-1
+      # Required: Add these as secret environment variables in Render dashboard:
+      # - AWS_ACCESS_KEY_ID
+      # - AWS_SECRET_ACCESS_KEY
+      # Optional: Override default table names
+      # - WORKSPACES_TABLE (default: dev-notion-workspaces)
+      # - PAGES_TABLE (default: dev-notion-pages)
+      # - BLOCKS_TABLE (default: dev-notion-blocks)
+      # - USERS_TABLE (default: dev-notion-users)
+      # - WORKSPACE_MEMBERS_TABLE (default: dev-notion-workspace-members)
+      # - PAGE_SHARES_TABLE (default: dev-notion-page-shares)
+      # - COMMENTS_TABLE (default: dev-notion-comments)
+      # - NOTIFICATIONS_TABLE (default: dev-notion-notifications)
+      # - FAVORITES_TABLE (default: dev-notion-favorites)
+      # - TEMPLATES_TABLE (default: dev-notion-templates)
     healthCheckPath: /health
