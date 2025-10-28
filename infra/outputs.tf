@@ -67,3 +67,13 @@ output "apprunner_service_status" {
   description = "Status of the App Runner service"
   value       = aws_apprunner_service.backend_api.status
 }
+
+output "s3_images_bucket_name" {
+  description = "Name of the S3 bucket for images"
+  value       = aws_s3_bucket.images.id
+}
+
+output "s3_images_bucket_url" {
+  description = "URL of the S3 bucket for images"
+  value       = "https://${aws_s3_bucket.images.bucket}.s3.${var.aws_region}.amazonaws.com"
+}

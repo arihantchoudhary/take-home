@@ -659,3 +659,83 @@ resource "aws_apprunner_service" "backend_api" {
     aws_apprunner_connection.github
   ]
 }
+
+# ============= S3 Bucket for Image Storage =============
+
+resource "aws_s3_bucket" "images" {
+  bucket = "${var.environment}-notion-images-${data.aws_caller_identity.current.account_id}"
+
+  tags = {
+    Name        = "Notion Images"
+    Environment = var.environment
+  }
+}
+
+resource "aws_s3_bucket_public_access_block" "images" {
+  bucket = aws_s3_bucket.images.id
+
+  block_public_acls       = false
+  block_public_policy     = false
+  ignore_public_acls      = false
+  restrict_public_buckets = false
+}
+
+resource "aws_s3_bucket_cors_configuration" "images" {
+  bucket = aws_s3_bucket.images.id
+
+  cors_rule {
+    allowed_headers = ["*"]
+    allowed_methods = ["GET", "PUT", "POST"]
+    allowed_origins = ["*"]
+    expose_headers  = ["ETag"]
+    max_age_seconds = 3000
+  }
+}
+
+resource "aws_s3_bucket_policy" "images" {
+  bucket = aws_s3_bucket.images.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid       = "PublicReadGetObject"
+        Effect    = "Allow"
+        Principal = "*"
+        Action    = "s3:GetObject"
+        Resource  = "${aws_s3_bucket.images.arn}/*"
+      }
+    ]
+  })
+
+  depends_on = [aws_s3_bucket_public_access_block.images]
+}
+
+# IAM Policy for S3 access
+resource "aws_iam_role_policy" "apprunner_s3_policy" {
+  name = "${var.environment}-apprunner-s3-policy"
+  role = aws_iam_role.apprunner_service_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:PutObject",
+          "s3:GetObject",
+          "s3:DeleteObject",
+          "s3:PutObjectAcl"
+        ]
+        Resource = "${aws_s3_bucket.images.arn}/*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:ListBucket"
+        ]
+        Resource = aws_s3_bucket.images.arn
+      }
+    ]
+  })
+}

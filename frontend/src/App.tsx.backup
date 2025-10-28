@@ -4,8 +4,10 @@ import { BlockRenderer } from './components/BlockRenderer';
 import * as api from './api';
 import './App.css';
 
+console.log('[APP] 🚀 App Component Loaded');
 
 function App() {
+  console.log('[APP] 🔄 App Component Rendering');
 
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [loading, setLoading] = useState(true);
@@ -17,22 +19,31 @@ function App() {
   const [showCoverInput, setShowCoverInput] = useState(false);
 
   useEffect(() => {
+    console.log('[APP] 🎬 useEffect - Component mounted, loading blocks');
     loadBlocks();
   }, []);
 
   const loadBlocks = async () => {
+    console.log('[APP] 📚 LOAD BLOCKS - Function called');
+    console.log('[APP] ⏳ Setting loading = true');
 
     try {
       setLoading(true);
       setError(null);
 
+      console.log('[APP] 📡 Fetching blocks from API...');
       const fetchedBlocks = await api.fetchBlocks();
 
+      console.log('[APP] ✅ Blocks fetched successfully');
+      console.log('[APP] 📦 Fetched blocks:', fetchedBlocks);
+      console.log('[APP] 📊 Number of blocks:', fetchedBlocks.length);
 
       setBlocks(fetchedBlocks);
+      console.log('[APP] 💾 Blocks state updated');
 
       // If no blocks exist, create an empty one automatically
       if (fetchedBlocks.length === 0) {
+        console.log('[APP] 🆕 No blocks found, creating initial empty block');
 
         const emptyBlock = {
           id: `block-${Date.now()}`,
@@ -41,11 +52,15 @@ function App() {
           value: '',
         };
 
+        console.log('[APP] 📝 Empty block created:', emptyBlock);
 
         try {
+          console.log('[APP] 📤 Sending empty block to API...');
           await api.createBlock(emptyBlock);
 
+          console.log('[APP] ✅ Empty block created successfully');
           setBlocks([emptyBlock]);
+          console.log('[APP] 💾 Blocks state updated with empty block');
         } catch (createErr) {
           console.error('[APP] ❌ Error creating initial block:', createErr);
         }
@@ -55,10 +70,13 @@ function App() {
       console.error('[APP] 📄 Error details:', err);
 
       setError('Failed to load blocks');
+      console.log('[APP] 💥 Error state set');
     } finally {
+      console.log('[APP] ⏳ Setting loading = false');
       setLoading(false);
     }
 
+    console.log('[APP] ✅ LOAD BLOCKS - Function complete');
   };
 
   const handleAddBlockInline = async () => {
