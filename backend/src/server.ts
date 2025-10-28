@@ -1,16 +1,18 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
+import * as db from './dynamodb';
 
 // Import routes
-import workspacesRouter from './routes/workspaces';
-import pagesRouter from './routes/pages';
 import blocksRouter from './routes/blocks';
-import usersRouter from './routes/users';
-import commentsRouter from './routes/comments';
-import notificationsRouter from './routes/notifications';
-import favoritesRouter from './routes/favorites';
-import searchRouter from './routes/search';
-import templatesRouter from './routes/templates';
+// TODO: Fix remaining routes - currently disabled due to signature mismatches
+// import workspacesRouter from './routes/workspaces';
+// import pagesRouter from './routes/pages';
+// import usersRouter from './routes/users';
+// import commentsRouter from './routes/comments';
+// import notificationsRouter from './routes/notifications';
+// import favoritesRouter from './routes/favorites';
+// import searchRouter from './routes/search';
+// import templatesRouter from './routes/templates';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -26,23 +28,46 @@ app.use((req, res, next) => {
 });
 
 // API Routes
-app.use('/api/workspaces', workspacesRouter);
-app.use('/api/pages', pagesRouter);
 app.use('/api/blocks', blocksRouter);
-app.use('/api/users', usersRouter);
-app.use('/api/comments', commentsRouter);
-app.use('/api/notifications', notificationsRouter);
-app.use('/api/favorites', favoritesRouter);
-app.use('/api/search', searchRouter);
-app.use('/api/templates', templatesRouter);
+// TODO: Enable remaining routes after fixing signatures
+// app.use('/api/workspaces', workspacesRouter);
+// app.use('/api/pages', pagesRouter);
+// app.use('/api/users', usersRouter);
+// app.use('/api/comments', commentsRouter);
+// app.use('/api/notifications', notificationsRouter);
+// app.use('/api/favorites', favoritesRouter);
+// app.use('/api/search', searchRouter);
+// app.use('/api/templates', templatesRouter);
 
 // Health check endpoint
-app.get('/health', (req: Request, res: Response) => {
-  res.json({
-    status: 'ok',
-    timestamp: new Date().toISOString(),
-    service: 'notion-clone-api'
-  });
+app.get('/health', async (req: Request, res: Response) => {
+  try {
+    // Test DynamoDB connection by listing one workspace
+    const testWorkspaces = await db.getWorkspace('test-health-check');
+
+    res.json({
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      service: 'notion-clone-api',
+      database: 'dynamodb',
+      dynamodb_connected: true,
+      tables_configured: {
+        workspaces: process.env.WORKSPACES_TABLE || 'dev-notion-workspaces',
+        pages: process.env.PAGES_TABLE || 'dev-notion-pages',
+        blocks: process.env.BLOCKS_TABLE || 'dev-notion-blocks',
+        users: process.env.USERS_TABLE || 'dev-notion-users',
+      }
+    });
+  } catch (error) {
+    res.status(503).json({
+      status: 'error',
+      timestamp: new Date().toISOString(),
+      service: 'notion-clone-api',
+      database: 'dynamodb',
+      dynamodb_connected: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
 });
 
 // Root endpoint
