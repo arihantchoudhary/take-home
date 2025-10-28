@@ -1,5 +1,5 @@
 import React from 'react';
-import { Block, TextBlock, ImageBlock } from '../types';
+import type { Block, TextBlock, ImageBlock } from '../types';
 
 interface BlockRendererProps {
   block: Block;

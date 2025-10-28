@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Block, TextBlock, ImageBlock, TextType } from '../types';
+import React, { useState } from 'react';
+import type { Block, TextBlock, ImageBlock, TextType } from '../types';
 
 interface BlockEditorProps {
   block?: Block;

@@ -1,7 +1,16 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
-import { Block, TextBlock, ImageBlock } from './types';
-import * as db from './database';
+
+// Import routes
+import workspacesRouter from './routes/workspaces';
+import pagesRouter from './routes/pages';
+import blocksRouter from './routes/blocks';
+import usersRouter from './routes/users';
+import commentsRouter from './routes/comments';
+import notificationsRouter from './routes/notifications';
+import favoritesRouter from './routes/favorites';
+import searchRouter from './routes/search';
+import templatesRouter from './routes/templates';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -10,109 +19,76 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json());
 
-// GET /api/blocks - Get all blocks
-app.get('/api/blocks', async (req: Request, res: Response) => {
-  try {
-    const blocks = await db.getAllBlocks();
-    res.json(blocks);
-  } catch (error) {
-    console.error('Error fetching blocks:', error);
-    res.status(500).json({ error: 'Failed to fetch blocks' });
-  }
+// Request logging middleware
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+  next();
 });
 
-// GET /api/blocks/:id - Get a single block
-app.get('/api/blocks/:id', async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    const block = await db.getBlockById(id);
-
-    if (!block) {
-      return res.status(404).json({ error: 'Block not found' });
-    }
-
-    res.json(block);
-  } catch (error) {
-    console.error('Error fetching block:', error);
-    res.status(500).json({ error: 'Failed to fetch block' });
-  }
-});
-
-// POST /api/blocks - Create a new block
-app.post('/api/blocks', async (req: Request, res: Response) => {
-  try {
-    const block: Block = req.body;
-
-    // Validate block structure
-    if (!block.id || !block.type) {
-      return res.status(400).json({ error: 'Invalid block structure' });
-    }
-
-    // Validate text block
-    if (block.type === 'text') {
-      const textBlock = block as TextBlock;
-      if (!textBlock.textType || textBlock.value === undefined) {
-        return res.status(400).json({ error: 'Invalid text block structure' });
-      }
-    }
-
-    // Validate image block
-    if (block.type === 'image') {
-      const imageBlock = block as ImageBlock;
-      if (!imageBlock.src || !imageBlock.width || !imageBlock.height) {
-        return res.status(400).json({ error: 'Invalid image block structure' });
-      }
-    }
-
-    const newBlock = await db.addBlock(block);
-    res.status(201).json(newBlock);
-  } catch (error) {
-    console.error('Error creating block:', error);
-    res.status(500).json({ error: 'Failed to create block' });
-  }
-});
-
-// PUT /api/blocks/:id - Update a block
-app.put('/api/blocks/:id', async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    const block: Block = req.body;
-
-    const updatedBlock = await db.updateBlock(id, block);
-
-    if (!updatedBlock) {
-      return res.status(404).json({ error: 'Block not found' });
-    }
-
-    res.json(updatedBlock);
-  } catch (error) {
-    console.error('Error updating block:', error);
-    res.status(500).json({ error: 'Failed to update block' });
-  }
-});
-
-// DELETE /api/blocks/:id - Delete a block
-app.delete('/api/blocks/:id', async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    const deleted = await db.deleteBlock(id);
-
-    if (!deleted) {
-      return res.status(404).json({ error: 'Block not found' });
-    }
-
-    res.status(204).send();
-  } catch (error) {
-    console.error('Error deleting block:', error);
-    res.status(500).json({ error: 'Failed to delete block' });
-  }
-});
+// API Routes
+app.use('/api/workspaces', workspacesRouter);
+app.use('/api/pages', pagesRouter);
+app.use('/api/blocks', blocksRouter);
+app.use('/api/users', usersRouter);
+app.use('/api/comments', commentsRouter);
+app.use('/api/notifications', notificationsRouter);
+app.use('/api/favorites', favoritesRouter);
+app.use('/api/search', searchRouter);
+app.use('/api/templates', templatesRouter);
 
 // Health check endpoint
 app.get('/health', (req: Request, res: Response) => {
-  res.json({ status: 'ok' });
+  res.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    service: 'notion-clone-api'
+  });
+});
+
+// Root endpoint
+app.get('/', (req: Request, res: Response) => {
+  res.json({
+    message: 'Notion Clone API',
+    version: '1.0.0',
+    endpoints: {
+      workspaces: '/api/workspaces',
+      pages: '/api/pages',
+      blocks: '/api/blocks',
+      users: '/api/users',
+      comments: '/api/comments',
+      notifications: '/api/notifications',
+      favorites: '/api/favorites',
+      search: '/api/search',
+      templates: '/api/templates',
+    }
+  });
+});
+
+// 404 handler
+app.use((req: Request, res: Response) => {
+  res.status(404).json({ error: 'Not found' });
+});
+
+// Error handler
+app.use((err: Error, req: Request, res: Response, next: Function) => {
+  console.error('Error:', err);
+  res.status(500).json({ error: 'Internal server error', message: err.message });
 });
 
 app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
+  console.log(`
+  ╔═══════════════════════════════════════════════════════╗
+  ║                                                       ║
+  ║   🚀 Notion Clone API Server                         ║
+  ║                                                       ║
+  ║   Server: http://localhost:${PORT}                      ║
+  ║   Health: http://localhost:${PORT}/health               ║
+  ║                                                       ║
+  ║   Environment: ${process.env.NODE_ENV || 'development'}                        ║
+  ║   AWS Region: ${process.env.AWS_REGION || 'us-east-1'}                        ║
+  ║                                                       ║
+  ╚═══════════════════════════════════════════════════════╝
+  `);
 });
+
+export default app;

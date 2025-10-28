@@ -29,3 +29,6 @@ yarn-error.log*
 .vscode/
 .idea/
 *.code-workspace
+.terraform/
+terraform.tfstate*
+.terraform.lock.hcl

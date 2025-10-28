@@ -1,4 +1,4 @@
-import { Block } from './types';
+import type { Block } from './types';
 
 const API_BASE_URL = 'http://localhost:3001/api';
 

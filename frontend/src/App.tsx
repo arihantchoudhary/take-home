@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Block } from './types';
+import { useState, useEffect } from 'react';
+import type { Block } from './types';
 import { BlockRenderer } from './components/BlockRenderer';
 import { BlockEditor } from './components/BlockEditor';
 import * as api from './api';
