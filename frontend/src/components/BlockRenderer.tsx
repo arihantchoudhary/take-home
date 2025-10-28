@@ -238,9 +238,10 @@ export const BlockRenderer: React.FC<BlockRendererProps> = ({ block, onDelete, o
               alt="Block"
               className="block-image"
               style={{
-                width: `${imageBlock.width}px`,
-                height: `${imageBlock.height}px`,
-                objectFit: 'cover'
+                width: '100%',
+                height: 'auto',
+                maxWidth: '100%',
+                objectFit: 'contain'
               }}
             />
           </div>
