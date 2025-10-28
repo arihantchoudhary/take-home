@@ -336,31 +336,12 @@ function App() {
                       console.log('[APP] 👋 Cover input blurred');
                       console.log('[APP] 🎯 Related target:', e.relatedTarget);
 
-                      // Don't close if clicking on the file upload label or within the container
-                      const relatedTarget = e.relatedTarget as HTMLElement;
-
-                      // Check if the related target is the label for file upload
-                      if (relatedTarget) {
-                        console.log('[APP] 🔍 Related target class:', relatedTarget.className);
-                        console.log('[APP] 🔍 Related target tag:', relatedTarget.tagName);
-
-                        if (relatedTarget.className?.includes('cover-upload-btn')) {
-                          console.log('[APP] ⏭️ Clicked on upload button, keeping input open');
-                          return;
-                        }
-                      }
-
-                      // If no related target (clicking on label), don't close immediately
-                      // Give time for the file picker to open
-                      console.log('[APP] 🕐 Setting timeout to close input');
+                      // The mousedown preventDefault on the label prevents blur when clicking upload button
+                      // So we can safely close after a short delay for any other blur events
+                      console.log('[APP] 🕐 Setting 200ms timeout to close input');
                       setTimeout(() => {
-                        // Only close if no cover image was set
-                        if (!coverImage) {
-                          console.log('[APP] ❌ Closing cover input - no cover image');
-                          setShowCoverInput(false);
-                        } else {
-                          console.log('[APP] ✅ Cover image set, not closing input');
-                        }
+                        console.log('[APP] ❌ Closing cover input after timeout');
+                        setShowCoverInput(false);
                       }, 200);
                     }}
                   />
@@ -424,7 +405,7 @@ function App() {
                     <button
                       key={emoji}
                       className="emoji-option"
-                      onClick={(e) => {
+                      onClick={async (e) => {
                         console.log('[APP] 😀 Emoji clicked:', emoji);
                         e.preventDefault();
                         e.stopPropagation();
@@ -433,6 +414,14 @@ function App() {
                         console.log('[APP] ❌ Closing emoji picker');
                         setShowEmojiPicker(false);
                         console.log('[APP] ✅ Emoji picker closed, icon set to:', emoji);
+
+                        // Persist to backend
+                        try {
+                          await api.updatePageMetadata({ icon: emoji });
+                          console.log('[APP] ✅ Page icon persisted:', emoji);
+                        } catch (err) {
+                          console.error('[APP] ❌ Error persisting page icon:', err);
+                        }
                       }}
                       onMouseDown={(e) => {
                         console.log('[APP] 🖱️ Emoji mousedown:', emoji);

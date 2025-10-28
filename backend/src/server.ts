@@ -3,6 +3,7 @@ import cors from 'cors';
 
 // Import routes
 import blocksRouter from './routes/blocks-simple';
+import pagesRouter from './routes/pages-simple';
 // import imagesRouter from './routes/images'; // Disabled for Render deployment (no S3)
 
 const app = express();
@@ -20,6 +21,7 @@ app.use((req, res, next) => {
 
 // API Routes
 app.use('/api/blocks', blocksRouter);
+app.use('/api/pages', pagesRouter);
 // app.use('/api/images', imagesRouter); // Disabled for Render deployment (no S3)
 
 // Health check endpoint
@@ -39,6 +41,7 @@ app.get('/', (req: Request, res: Response) => {
     version: '1.0.0',
     endpoints: {
       blocks: '/api/blocks',
+      pages: '/api/pages',
       health: '/health'
     }
   });

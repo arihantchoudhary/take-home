@@ -102,3 +102,55 @@ export async function deleteBlock(id: string): Promise<void> {
     throw error;
   }
 }
+
+// Page metadata interface
+export interface PageMetadata {
+  pageId: string;
+  title: string;
+  icon: string;
+  coverImage: string | null;
+}
+
+export async function fetchPageMetadata(): Promise<PageMetadata> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/pages/default`);
+
+    if (!response.ok) {
+      console.error('[API] ❌ FETCH PAGE METADATA FAILED - Bad response');
+      throw new Error('Failed to fetch page metadata');
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('[API] ❌ FETCH PAGE METADATA ERROR:', error);
+    throw error;
+  }
+}
+
+export async function updatePageMetadata(updates: Partial<PageMetadata>): Promise<PageMetadata> {
+  try {
+    const payload = JSON.stringify(updates);
+
+    const response = await fetch(`${API_BASE_URL}/pages/default`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: payload,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[API] ❌ UPDATE PAGE METADATA FAILED');
+      console.error('[API] 📄 Error response:', errorText);
+      throw new Error('Failed to update page metadata');
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('[API] ❌ UPDATE PAGE METADATA ERROR:', error);
+    throw error;
+  }
+}
