@@ -1,5 +1,13 @@
 {
   "extends": "./tsconfig.json",
-  "include": ["src/server.ts", "src/database.ts", "src/types.ts", "src/routes/blocks.ts"],
-  "exclude": ["node_modules", "src/dynamodb.ts", "src/server.complex.ts"]
+  "include": [
+    "src/server.ts",
+    "src/database.ts",
+    "src/types.ts",
+    "src/routes/blocks.ts",
+    "src/routes/pages-simple.ts",
+    "src/s3.ts",
+    "src/dynamodb.ts"
+  ],
+  "exclude": ["node_modules", "src/server.complex.ts"]
 }
