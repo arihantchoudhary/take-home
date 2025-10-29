@@ -1,11 +1,7 @@
 import { Router, Request, Response } from 'express';
-import fs from 'fs/promises';
-import path from 'path';
+import * as dynamodb from '../dynamodb';
 
 const router = Router();
-
-const DATA_DIR = path.join(__dirname, '../../data');
-const PAGE_FILE = path.join(DATA_DIR, 'page-metadata.json');
 
 interface PageMetadata {
   pageId: string;
@@ -14,35 +10,38 @@ interface PageMetadata {
   coverImage: string | null;
 }
 
-// Ensure data directory and file exist
-async function ensureDataFile() {
+// Get or create default page in DynamoDB
+async function getDefaultPage(): Promise<PageMetadata> {
   try {
-    await fs.mkdir(DATA_DIR, { recursive: true });
-    try {
-      await fs.access(PAGE_FILE);
-    } catch {
-      // Create default page metadata
-      const defaultData: PageMetadata = {
-        pageId: 'default-page',
+    let page = await dynamodb.getPage('default-page');
+
+    if (!page) {
+      // Create default page if it doesn't exist
+      const defaultPageData = {
+        workspaceId: 'default-workspace',
         title: 'Untitled',
         icon: '📄',
-        coverImage: null,
+        isPrivate: false,
       };
-      await fs.writeFile(PAGE_FILE, JSON.stringify(defaultData, null, 2));
-    }
-  } catch (error) {
-    console.error('Error ensuring page metadata file:', error);
-  }
-}
 
-// Read page metadata
-async function readPageMetadata(): Promise<PageMetadata> {
-  await ensureDataFile();
-  try {
-    const data = await fs.readFile(PAGE_FILE, 'utf-8');
-    return JSON.parse(data);
+      // First create workspace if needed
+      const workspace = await dynamodb.getWorkspace('default-workspace');
+      if (!workspace) {
+        await dynamodb.createWorkspace('Default Workspace', 'anonymous');
+      }
+
+      page = await dynamodb.createPage(defaultPageData, 'anonymous');
+    }
+
+    return {
+      pageId: page.pageId,
+      title: page.title,
+      icon: page.icon || '📄',
+      coverImage: page.coverImage || null,
+    };
   } catch (error) {
-    console.error('Error reading page metadata:', error);
+    console.error('Error getting default page:', error);
+    // Return fallback data
     return {
       pageId: 'default-page',
       title: 'Untitled',
@@ -52,16 +51,10 @@ async function readPageMetadata(): Promise<PageMetadata> {
   }
 }
 
-// Write page metadata
-async function writePageMetadata(metadata: PageMetadata): Promise<void> {
-  await fs.mkdir(DATA_DIR, { recursive: true });
-  await fs.writeFile(PAGE_FILE, JSON.stringify(metadata, null, 2));
-}
-
 // GET /api/pages/default - Get the default page metadata
 router.get('/default', async (req: Request, res: Response) => {
   try {
-    const metadata = await readPageMetadata();
+    const metadata = await getDefaultPage();
     res.json(metadata);
   } catch (error) {
     console.error('Error fetching page metadata:', error);
@@ -72,19 +65,32 @@ router.get('/default', async (req: Request, res: Response) => {
 // PUT /api/pages/default - Update the default page metadata
 router.put('/default', async (req: Request, res: Response) => {
   try {
-    const currentMetadata = await readPageMetadata();
     const updates = req.body;
 
-    const updatedMetadata: PageMetadata = {
-      pageId: currentMetadata.pageId,
-      title: updates.title !== undefined ? updates.title : currentMetadata.title,
-      icon: updates.icon !== undefined ? updates.icon : currentMetadata.icon,
-      coverImage: updates.coverImage !== undefined ? updates.coverImage : currentMetadata.coverImage,
+    // Update the page in DynamoDB
+    const updatedPage = await dynamodb.updatePage(
+      'default-page',
+      {
+        title: updates.title,
+        icon: updates.icon,
+        coverImage: updates.coverImage,
+      },
+      'anonymous'
+    );
+
+    if (!updatedPage) {
+      return res.status(404).json({ error: 'Page not found' });
+    }
+
+    const response: PageMetadata = {
+      pageId: updatedPage.pageId,
+      title: updatedPage.title,
+      icon: updatedPage.icon || '📄',
+      coverImage: updatedPage.coverImage || null,
     };
 
-    await writePageMetadata(updatedMetadata);
-    console.log('Updated page metadata:', updatedMetadata);
-    res.json(updatedMetadata);
+    console.log('Updated page metadata:', response);
+    res.json(response);
   } catch (error) {
     console.error('Error updating page metadata:', error);
     res.status(500).json({ error: 'Failed to update page metadata' });

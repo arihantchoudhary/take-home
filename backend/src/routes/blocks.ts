@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
-import * as db from '../database';
+import * as dynamodb from '../dynamodb';
 import { Block } from '../types';
+import { uploadImageToS3, isBase64Image, getContentTypeFromDataUri } from '../s3';
 
 const router = Router();
 
@@ -11,10 +12,10 @@ router.get('/', async (req: Request, res: Response) => {
 
     let blocks;
     if (pageId && typeof pageId === 'string') {
-      blocks = await db.getBlocksByPage(pageId);
+      blocks = await dynamodb.getPageBlocks(pageId);
     } else {
-      // Return all blocks if no pageId specified (for backward compatibility)
-      blocks = await db.getAllBlocks();
+      // Return blocks for default page if no pageId specified
+      blocks = await dynamodb.getPageBlocks('default-page');
     }
 
     // Transform backend schema to frontend schema
@@ -57,7 +58,7 @@ router.post('/', async (req: Request, res: Response) => {
     // Remove the old 'id' field if it exists
     delete (blockData as any).id;
 
-    const block = await db.createBlock(blockData);
+    const block = await dynamodb.createBlock(blockData, blockData.createdBy);
 
     // Transform back to frontend schema for response
     const response = {
@@ -76,7 +77,7 @@ router.post('/', async (req: Request, res: Response) => {
 router.get('/:blockId', async (req: Request, res: Response) => {
   try {
     const { blockId } = req.params;
-    const block = await db.getBlockById(blockId);
+    const block = await dynamodb.getBlock(blockId);
 
     if (!block) {
       return res.status(404).json({ error: 'Block not found' });
@@ -104,7 +105,16 @@ router.put('/:blockId', async (req: Request, res: Response) => {
     // Remove 'id' from updates if present (use blockId instead)
     delete (updates as any).id;
 
-    const block = await db.updateBlock(blockId, updates);
+    // If this is an image block with base64 data, upload to S3 first
+    if (updates.type === 'image' && updates.content && isBase64Image(updates.content)) {
+      console.log('[BLOCKS] Detected base64 image, uploading to S3...');
+      const contentType = getContentTypeFromDataUri(updates.content);
+      const s3Url = await uploadImageToS3(updates.content, contentType);
+      console.log('[BLOCKS] Image uploaded to S3:', s3Url);
+      updates.content = s3Url;
+    }
+
+    const block = await dynamodb.updateBlock(blockId, updates, updates.updatedBy || 'anonymous');
 
     if (!block) {
       return res.status(404).json({ error: 'Block not found' });
@@ -127,7 +137,7 @@ router.put('/:blockId', async (req: Request, res: Response) => {
 router.delete('/:blockId', async (req: Request, res: Response) => {
   try {
     const { blockId } = req.params;
-    const deleted = await db.deleteBlock(blockId);
+    const deleted = await dynamodb.deleteBlock(blockId);
 
     if (!deleted) {
       return res.status(404).json({ error: 'Block not found' });

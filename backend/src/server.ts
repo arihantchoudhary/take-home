@@ -1,9 +1,9 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 
-// Import routes
-import blocksRouter from './routes/blocks-simple';
-import pagesRouter from './routes/pages-simple';
+// Import routes - using DynamoDB routes for persistent storage
+import blocksRouter from './routes/blocks';
+import pagesRouter from './routes/pages';
 // import imagesRouter from './routes/images'; // Disabled for Render deployment (no S3)
 
 const app = express();
@@ -32,7 +32,8 @@ app.get('/health', async (req: Request, res: Response) => {
     status: 'ok',
     timestamp: new Date().toISOString(),
     service: 'notion-clone-api',
-    database: 'file-based'
+    database: 'dynamodb',
+    region: process.env.AWS_REGION || 'us-east-1'
   });
 });
 
