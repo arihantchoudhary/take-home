@@ -209,24 +209,35 @@ function App() {
       type: 'text' as const,
       textType: 'paragraph' as const,
       value: '',
+      order: blocks.length,
     };
 
     try {
+      // Optimistically add to UI immediately
+      setBlocks(prevBlocks => [...prevBlocks, newBlock]);
+
+      // Then save to backend
       await api.createBlock(newBlock);
-      await loadBlocks();
     } catch (err) {
       console.error('Error creating block:', err);
+      // Reload on error to get correct state
+      await loadBlocks();
     }
   };
 
   const handleDeleteBlock = async (id: string) => {
     if (!confirm('Delete this block?')) return;
     try {
+      // Optimistically remove from UI immediately
+      setBlocks(prevBlocks => prevBlocks.filter(b => b.id !== id));
+
+      // Then delete from backend
       await api.deleteBlock(id);
-      await loadBlocks();
     } catch (err) {
       alert('Failed to delete block');
       console.error('Error deleting block:', err);
+      // Reload on error to get correct state
+      await loadBlocks();
     }
   };
 
