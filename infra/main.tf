@@ -617,6 +617,7 @@ resource "aws_apprunner_service" "backend_api" {
             NOTIFICATIONS_TABLE_NAME     = aws_dynamodb_table.notifications.name
             FAVORITES_TABLE_NAME         = aws_dynamodb_table.favorites.name
             TEMPLATES_TABLE_NAME         = aws_dynamodb_table.templates.name
+            S3_BUCKET_NAME               = aws_s3_bucket.images.id
           }
         }
       }

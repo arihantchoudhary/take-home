@@ -43,6 +43,15 @@ router.post('/', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Missing required field: type', received: incomingData });
     }
 
+    // If this is an image block with base64 data, upload to S3 first
+    if (incomingData.type === 'image' && incomingData.content && isBase64Image(incomingData.content)) {
+      console.log('[BLOCKS] Detected base64 image in new block, uploading to S3...');
+      const contentType = getContentTypeFromDataUri(incomingData.content);
+      const s3Url = await uploadImageToS3(incomingData.content, contentType);
+      console.log('[BLOCKS] Image uploaded to S3:', s3Url);
+      incomingData.content = s3Url;
+    }
+
     // Transform frontend schema to backend schema
     const now = Date.now();
     const blockData: Block = {

@@ -6,7 +6,7 @@ const s3Client = new S3Client({
   region: process.env.AWS_REGION || 'us-east-1',
 });
 
-const BUCKET_NAME = process.env.S3_BUCKET_NAME || 'notion-clone-images';
+const BUCKET_NAME = process.env.S3_BUCKET_NAME || 'dev-notion-images-050451400186';
 
 /**
  * Upload a base64-encoded image to S3
@@ -33,8 +33,6 @@ export async function uploadImageToS3(base64Data: string, contentType: string = 
     Key: fileName,
     Body: buffer,
     ContentType: contentType,
-    // Make the object publicly readable
-    ACL: 'public-read',
   });
 
   await s3Client.send(command);

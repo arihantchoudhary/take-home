@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import * as dynamodb from '../dynamodb';
+import { uploadImageToS3, isBase64Image, getContentTypeFromDataUri } from '../s3';
 
 const router = Router();
 
@@ -66,6 +67,15 @@ router.get('/default', async (req: Request, res: Response) => {
 router.put('/default', async (req: Request, res: Response) => {
   try {
     const updates = req.body;
+
+    // If coverImage is a base64 image, upload to S3 first
+    if (updates.coverImage && isBase64Image(updates.coverImage)) {
+      console.log('[PAGES] Detected base64 cover image, uploading to S3...');
+      const contentType = getContentTypeFromDataUri(updates.coverImage);
+      const s3Url = await uploadImageToS3(updates.coverImage, contentType);
+      console.log('[PAGES] Cover image uploaded to S3:', s3Url);
+      updates.coverImage = s3Url;
+    }
 
     // Update the page in DynamoDB
     const updatedPage = await dynamodb.updatePage(
